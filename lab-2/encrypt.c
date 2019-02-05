@@ -30,7 +30,11 @@ int main( int argc, char* argv[] ) {
 }
 
 aes_gf28_t xtime(aes_gf28_t a) {
-  return 0;
+  if ((a | 0x80) == 0x80) {
+    a = a | p;
+  }
+  a = a >> 1;
+  return a;
 }
 
 aes_gf28_t sbox(aes_gf28_t a) {

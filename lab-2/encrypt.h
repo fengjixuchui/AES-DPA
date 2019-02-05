@@ -16,6 +16,7 @@
 #include <openssl/aes.h>
 
 typedef uint8_t aes_gf28_t;
+
 typedef struct {
   uint8_t bytes[4];
 } gf28_k;
