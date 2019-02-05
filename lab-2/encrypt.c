@@ -30,8 +30,9 @@ int main( int argc, char* argv[] ) {
 }
 
 aes_gf28_t xtime(aes_gf28_t a) {
+  uint8_t p = 0x1B;
   if ((a | 0x80) == 0x80) {
-    a = a | p;
+    a = a ^ p;
   }
   a = a >> 1;
   return a;
