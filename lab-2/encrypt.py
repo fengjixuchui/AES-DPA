@@ -1,0 +1,26 @@
+# Copyright (C) 2018 Daniel Page <csdsp@bristol.ac.uk>
+#
+# Use of this source code is restricted per the CC BY-NC-ND license, a copy of 
+# which can be found via http://creativecommons.org (and should be included as 
+# LICENSE.txt within the associated archive or repository).
+
+import struct, Crypto.Cipher.AES as AES
+
+if ( __name__ == '__main__' ) :
+  k = [ 0x2B, 0x7E, 0x15, 0x16, 0x28, 0xAE, 0xD2, 0xA6, \
+        0xAB, 0xF7, 0x15, 0x88, 0x09, 0xCF, 0x4F, 0x3C ]
+  m = [ 0x32, 0x43, 0xF6, 0xA8, 0x88, 0x5A, 0x30, 0x8D, \
+        0x31, 0x31, 0x98, 0xA2, 0xE0, 0x37, 0x07, 0x34 ]
+  c = [ 0x39, 0x25, 0x84, 0x1D, 0x02, 0xDC, 0x09, 0xFB, \
+        0xDC, 0x11, 0x85, 0x97, 0x19, 0x6A, 0x0B, 0x32 ]
+
+  k = struct.pack( 16 * 'B', *k )
+  m = struct.pack( 16 * 'B', *m )
+  c = struct.pack( 16 * 'B', *c )
+
+  t = AES.new( k ).encrypt( m )
+
+  if( t == c ) :
+    print 'AES.Enc( k, m ) == c'
+  else :
+    print 'AES.Enc( k, m ) != c'
