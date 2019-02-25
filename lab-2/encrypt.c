@@ -144,5 +144,27 @@ void aes_enc_rnd_mix(aes_gf28_t* s) {
 }
 
 void aes_enc(uint8_t* c, uint8_t* m, uint8_t* k) {
-
+  // aes_gf28_t rk[], s[];
+  //
+  // aes_gf28_t* rcp = AES_RC;
+  // aes_gf28_t* rkp = rk;
+  //
+  // memcpy(s  , m, );
+  // memcpy(rkp, k, );
+  //
+  // aes_enc_rnd_key(s, rkp);
+  //
+  // for (int i = 1; i < Nr; i++) {
+  //   aes_enc_rnd_sub(s);
+  //   aes_enc_rnd_row(s);
+  //   aes_enc_rnd_mix(s);
+  //   aes_enc_exp_step();
+  //   aes_enc_rnd_key(s, rkp);
+  // }
+  // aes_enc_rnd_sub(s);
+  // aes_enc_rnd_row(s);
+  // aes_enc_exp_step();
+  // aes_enc_rnd_key(s, rkp);
+  //
+  // memcpy( r, s, );
 }
