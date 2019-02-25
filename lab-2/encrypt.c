@@ -91,11 +91,15 @@ void aes_enc_exp_step(aes_gf28_t* rk, gf28_k rc) {
 }
 
 void aes_enc_rnd_key(aes_gf28_t* s, aes_gf28_t* rk) {
-
+  for (int i = 0; i < 16; i++) {
+    s[i] = s[i] ^ rk[i];
+  }
 }
 
 void aes_enc_rnd_sub(aes_gf28_t* s) {
-
+  for (int i = 0; i < 16; i++) {
+    s[i] = sbox(s[i]);
+  }
 }
 
 void aes_enc_rnd_row(aes_gf28_t* s) {
