@@ -70,7 +70,20 @@ aes_gf28_t aes_gf28_inv(aes_gf28_t a) {
 }
 
 aes_gf28_t sbox(aes_gf28_t a) {
-  return 0;
+  a = aes_gf28_inv(a);
+
+  a = ( 0x63   ) ^
+      ( a      ) ^
+      ( a << 1 ) ^
+      ( a << 2 ) ^
+      ( a << 3 ) ^
+      ( a << 4 ) ^
+      ( a >> 7 ) ^
+      ( a >> 6 ) ^
+      ( a >> 5 ) ^
+      ( a >> 4 );
+
+      return a;
 }
 
 void aes_enc_exp_step(aes_gf28_t* rk, gf28_k rc) {
