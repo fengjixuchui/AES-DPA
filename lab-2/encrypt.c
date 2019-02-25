@@ -103,11 +103,44 @@ void aes_enc_rnd_sub(aes_gf28_t* s) {
 }
 
 void aes_enc_rnd_row(aes_gf28_t* s) {
+  aes_gf28_t tmp1 = s[1];
+  aes_gf28_t tmp2 = s[5];
+  aes_gf28_t tmp3 = s[9];
+  aes_gf28_t tmp4 = s[13];
 
+  s[13] = tmp1;
+  s[1]  = tmp2;
+  s[5]  = tmp3;
+  s[9]  = tmp4;
+
+  tmp1 = s[2];
+  tmp2 = s[6];
+  tmp3 = s[10];
+  tmp4 = s[14];
+
+  s[10] = tmp1;
+  s[14] = tmp2;
+  s[2]  = tmp3;
+  s[6]  = tmp4;
+
+  tmp1 = s[3];
+  tmp2 = s[7];
+  tmp3 = s[11];
+  tmp4 = s[15];
+
+  s[7]  = tmp1;
+  s[11] = tmp2;
+  s[15] = tmp3;
+  s[3]  = tmp4;
 }
 
 void aes_enc_rnd_mix(aes_gf28_t* s) {
-
+  for (int i = 0; i < 4; i++, s += 4) {
+    s[0] = xtime(s[0]) ^ (s[1] ^ xtime(s[1])) ^ s[2] ^ s[3];
+    s[1] = s[0] ^ xtime(s[1]) ^ (s[2] ^  xtime(s[2])) ^ s[3];
+    s[2] = s[0] ^ s[1] ^ xtime(s[2]) ^ (s[3] ^ xtime(s[3]));
+    s[3] = (s[0] ^ xtime(s[0])) ^ s[1] ^ s[2] ^ xtime(s[3]);
+  }
 }
 
 void aes_enc(uint8_t* c, uint8_t* m, uint8_t* k) {
