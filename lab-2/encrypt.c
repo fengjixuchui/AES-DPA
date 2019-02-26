@@ -139,23 +139,21 @@ void aes_enc(uint8_t* c, uint8_t* m, uint8_t* k) {
   uint8_t Nr = 10;
   aes_gf28_t rk[16], s[16];
 
-  aes_gf28_t* rkp = rk;
+  memcpy(s , m, 16);
+  memcpy(rk, k, 16);
 
-  memcpy(s  , m, 16);
-  memcpy(rkp, k, 16);
-
-  aes_enc_rnd_key(s, rkp);
+  aes_enc_rnd_key(s, rk);
   for (int i = 1; i < Nr; i++) {
     aes_enc_rnd_sub(s);
     aes_enc_rnd_row(s);
     aes_enc_rnd_mix(s);
-    aes_enc_exp_step(rkp, rc[i - 1]);
-    aes_enc_rnd_key(s, rkp);
+    aes_enc_exp_step(rk, rc[i - 1]);
+    aes_enc_rnd_key(s, rk);
   }
   aes_enc_rnd_sub(s);
   aes_enc_rnd_row(s);
-  aes_enc_exp_step(rkp, rc[9]);
-  aes_enc_rnd_key(s, rkp);
+  aes_enc_exp_step(rk, rc[9]);
+  aes_enc_rnd_key(s, rk);
 
   memcpy(c, s, 16);
 }
