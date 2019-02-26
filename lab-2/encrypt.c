@@ -7,6 +7,9 @@
 
 #include "encrypt.h"
 
+aes_gf28_t rc[16] = {0x01, 0x02, 0x04, 0x08, 0x10,
+                     0x20, 0x40, 0x80, 0x1B, 0x36};
+
 int main(int argc, char* argv[]) {
 
   uint8_t k[16] = {0x2B, 0x7E, 0x15, 0x16, 0x28, 0xAE, 0xD2, 0xA6,
@@ -86,8 +89,9 @@ aes_gf28_t sbox(aes_gf28_t a) {
       return a;
 }
 
-void aes_enc_exp_step(aes_gf28_t* rk, gf28_k rc) {
-
+void aes_enc_exp_step(aes_gf28_t* rk, aes_gf28_t rc) {
+  aes_gf28_t temp[16];
+  memcpy(temp, rk, 16);
 }
 
 void aes_enc_rnd_key(aes_gf28_t* s, aes_gf28_t* rk) {
@@ -103,35 +107,23 @@ void aes_enc_rnd_sub(aes_gf28_t* s) {
 }
 
 void aes_enc_rnd_row(aes_gf28_t* s) {
-  aes_gf28_t tmp1 = s[1];
-  aes_gf28_t tmp2 = s[5];
-  aes_gf28_t tmp3 = s[9];
-  aes_gf28_t tmp4 = s[13];
+  aes_gf28_t temp[16];
+  memcpy(temp, s, 16);
 
-  s[13] = tmp1;
-  s[1]  = tmp2;
-  s[5]  = tmp3;
-  s[9]  = tmp4;
+  s[13] = temp[1];
+  s[1]  = temp[5];
+  s[5]  = temp[9];
+  s[9]  = temp[13];
 
-  tmp1 = s[2];
-  tmp2 = s[6];
-  tmp3 = s[10];
-  tmp4 = s[14];
+  s[10] = temp[2];
+  s[14] = temp[6];
+  s[2]  = temp[10];
+  s[6]  = temp[14];
 
-  s[10] = tmp1;
-  s[14] = tmp2;
-  s[2]  = tmp3;
-  s[6]  = tmp4;
-
-  tmp1 = s[3];
-  tmp2 = s[7];
-  tmp3 = s[11];
-  tmp4 = s[15];
-
-  s[7]  = tmp1;
-  s[11] = tmp2;
-  s[15] = tmp3;
-  s[3]  = tmp4;
+  s[7]  = temp[3];
+  s[11] = temp[7];
+  s[15] = temp[11];
+  s[3]  = temp[15];
 }
 
 void aes_enc_rnd_mix(aes_gf28_t* s) {
@@ -144,27 +136,26 @@ void aes_enc_rnd_mix(aes_gf28_t* s) {
 }
 
 void aes_enc(uint8_t* c, uint8_t* m, uint8_t* k) {
-  // aes_gf28_t rk[], s[];
-  //
-  // aes_gf28_t* rcp = AES_RC;
-  // aes_gf28_t* rkp = rk;
-  //
-  // memcpy(s  , m, );
-  // memcpy(rkp, k, );
-  //
-  // aes_enc_rnd_key(s, rkp);
-  //
-  // for (int i = 1; i < Nr; i++) {
-  //   aes_enc_rnd_sub(s);
-  //   aes_enc_rnd_row(s);
-  //   aes_enc_rnd_mix(s);
-  //   aes_enc_exp_step();
-  //   aes_enc_rnd_key(s, rkp);
-  // }
-  // aes_enc_rnd_sub(s);
-  // aes_enc_rnd_row(s);
-  // aes_enc_exp_step();
-  // aes_enc_rnd_key(s, rkp);
-  //
-  // memcpy( r, s, );
+  uint8_t Nr = 10;
+  aes_gf28_t rk[16], s[16];
+
+  aes_gf28_t* rkp = rk;
+
+  memcpy(s  , m, 16);
+  memcpy(rkp, k, 16);
+
+  aes_enc_rnd_key(s, rkp);
+  for (int i = 1; i < Nr; i++) {
+    aes_enc_rnd_sub(s);
+    aes_enc_rnd_row(s);
+    aes_enc_rnd_mix(s);
+    aes_enc_exp_step(rkp, rc[i - 1]);
+    aes_enc_rnd_key(s, rkp);
+  }
+  aes_enc_rnd_sub(s);
+  aes_enc_rnd_row(s);
+  aes_enc_exp_step(rkp, rc[9]);
+  aes_enc_rnd_key(s, rkp);
+
+  memcpy(c, s, 16);
 }
