@@ -7,6 +7,25 @@
 
 #include "encrypt.h"
 
+#define AES_ENC_RND_MIX_STEP(a, b, c, d) { \
+  aes_gf28_t __a1 = s[ a ];                \
+  aes_gf28_t __b1 = s[ b ];                \
+  aes_gf28_t __c1 = s[ c ];                \
+  aes_gf28_t __d1 = s[ d ];                \
+  aes_gf28_t __a2 = xtime( __a1 );         \
+  aes_gf28_t __b2 = xtime( __b1 );         \
+  aes_gf28_t __c2 = xtime( __c1 );         \
+  aes_gf28_t __d2 = xtime( __d1 );         \
+  aes_gf28_t __a3 = __a1 ^ __a2;           \
+  aes_gf28_t __b3 = __b1 ^ __b2;           \
+  aes_gf28_t __c3 = __c1 ^ __c2;           \
+  aes_gf28_t __d3 = __d1 ^ __d2;           \
+  s[ a ] = __a2 ^ __b3 ^ __c1 ^ __d1;      \
+  s[ b ] = __a1 ^ __b2 ^ __c3 ^ __d1;      \
+  s[ c ] = __a1 ^ __b1 ^ __c2 ^ __d3;      \
+  s[ d ] = __a3 ^ __b1 ^ __c1 ^ __d2;      \
+}
+
 aes_gf28_t rc[16] = {0x01, 0x02, 0x04, 0x08, 0x10,
                      0x20, 0x40, 0x80, 0x1B, 0x36};
 
@@ -26,8 +45,8 @@ int main(int argc, char* argv[]) {
   // AES_KEY rk;
   // AES_set_encrypt_key(k, 128, &rk);
   // AES_encrypt(m, t, &rk);
-  
-  aes_enc(m, t, k);
+
+  aes_enc(t, m, k);
 
   if (!memcmp(t, c, 16 * sizeof(uint8_t))) {
     printf("AES.Enc( k, m ) == c\n");
@@ -35,6 +54,13 @@ int main(int argc, char* argv[]) {
     printf("AES.Enc( k, m ) != c\n");
   }
 
+}
+
+void print_values(aes_gf28_t* array, int size) {
+  for (int i = 0; i < size; i++) {
+    printf("%02X ", array[i]);
+  }
+  printf("\n");
 }
 
 aes_gf28_t xtime(aes_gf28_t a) {
@@ -145,11 +171,8 @@ void aes_enc_rnd_row(aes_gf28_t* s) {
 }
 
 void aes_enc_rnd_mix(aes_gf28_t* s) {
-  for (int i = 0; i < 4; i++, s += 4) {
-    s[0] = xtime(s[0]) ^ (s[1] ^ xtime(s[1])) ^ s[2] ^ s[3];
-    s[1] = s[0] ^ xtime(s[1]) ^ (s[2] ^  xtime(s[2])) ^ s[3];
-    s[2] = s[0] ^ s[1] ^ xtime(s[2]) ^ (s[3] ^ xtime(s[3]));
-    s[3] = (s[0] ^ xtime(s[0])) ^ s[1] ^ s[2] ^ xtime(s[3]);
+  for (int i = 0; i < 4; i++, s += 4 ) {
+    AES_ENC_RND_MIX_STEP(0, 1, 2, 3);
   }
 }
 
