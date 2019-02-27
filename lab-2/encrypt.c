@@ -173,13 +173,15 @@ void aes_enc_rnd_mix(aes_gf28_t* s) {
 }
 
 void aes_enc(uint8_t* c, uint8_t* m, uint8_t* k) {
-  uint8_t Nr = 10;
-  aes_gf28_t rk[16], s[16];
+  uint8_t Nb = 4, Nr = 10;
+  aes_gf28_t rk[4 * Nb], s[4 * Nb];
 
   memcpy(s , m, 16);
   memcpy(rk, k, 16);
 
+  // Initial round
   aes_enc_rnd_key(s, rk);
+  // (Nr - 1) iterated rounds
   for (int i = 1; i < Nr; i++) {
     aes_enc_rnd_sub(s);
     aes_enc_rnd_row(s);
@@ -187,6 +189,7 @@ void aes_enc(uint8_t* c, uint8_t* m, uint8_t* k) {
     aes_enc_exp_step(rk, rc[i - 1]);
     aes_enc_rnd_key(s, rk);
   }
+  // Final round
   aes_enc_rnd_sub(s);
   aes_enc_rnd_row(s);
   aes_enc_exp_step(rk, rc[9]);
