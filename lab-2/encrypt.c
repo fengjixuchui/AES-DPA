@@ -42,10 +42,6 @@ int main(int argc, char* argv[]) {
 
   uint8_t t[16];
 
-  // AES_KEY rk;
-  // AES_set_encrypt_key(k, 128, &rk);
-  // AES_encrypt(m, t, &rk);
-
   aes_enc(t, m, k);
 
   if (!memcmp(t, c, 16 * sizeof(uint8_t))) {
