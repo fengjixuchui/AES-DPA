@@ -23,10 +23,11 @@ int main(int argc, char* argv[]) {
 
   uint8_t t[16];
 
-  AES_KEY rk;
-
-  AES_set_encrypt_key(k, 128, &rk);
-  AES_encrypt(m, t, &rk);
+  // AES_KEY rk;
+  // AES_set_encrypt_key(k, 128, &rk);
+  // AES_encrypt(m, t, &rk);
+  
+  aes_enc(m, t, k);
 
   if (!memcmp(t, c, 16 * sizeof(uint8_t))) {
     printf("AES.Enc( k, m ) == c\n");
@@ -90,8 +91,25 @@ aes_gf28_t sbox(aes_gf28_t a) {
 }
 
 void aes_enc_exp_step(aes_gf28_t* rk, aes_gf28_t rc) {
-  aes_gf28_t temp[16];
-  memcpy(temp, rk, 16);
+  rk[0]  = rc ^ sbox(rk[13]) ^ rk[0];
+  rk[1]  =      sbox(rk[14]) ^ rk[1];
+  rk[2]  =      sbox(rk[15]) ^ rk[2];
+  rk[3]  =      sbox(rk[12]) ^ rk[3];
+
+  rk[4]  = rk[0]  ^ rk[4];
+  rk[5]  = rk[1]  ^ rk[5];
+  rk[6]  = rk[2]  ^ rk[6];
+  rk[7]  = rk[3]  ^ rk[7];
+
+  rk[8]  = rk[4]  ^ rk[8];
+  rk[9]  = rk[5]  ^ rk[9];
+  rk[10] = rk[6]  ^ rk[10];
+  rk[11] = rk[7]  ^ rk[11];
+
+  rk[12] = rk[8]  ^ rk[12];
+  rk[13] = rk[9]  ^ rk[13];
+  rk[14] = rk[10] ^ rk[14];
+  rk[15] = rk[11] ^ rk[15];
 }
 
 void aes_enc_rnd_key(aes_gf28_t* s, aes_gf28_t* rk) {
