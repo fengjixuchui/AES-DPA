@@ -16,6 +16,8 @@
 #include <openssl/aes.h>
 
 typedef uint8_t aes_gf28_t;
+typedef uint32_t aes_gf28_row_t;
+typedef uint32_t aes_gf28_col_t;
 
 aes_gf28_t xtime(aes_gf28_t a);
 aes_gf28_t aes_gf28_mul(aes_gf28_t a, aes_gf28_t b);
