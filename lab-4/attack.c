@@ -46,6 +46,44 @@ void attack() {
   printf("r = %d\n", r);
 }
 
+char int_to_char(int n) {
+  char c = n + 97;
+  return c;
+}
+
+void denary_to_char(char* string, int n, int base) {
+  int i = 0;
+
+  if (n == 0) string[0] = int_to_char(0);
+
+  while (n > 0) {
+    int r = n % base;
+    string[i++] = int_to_char(r);
+    n = n / base;
+  }
+}
+
+void brute_force_attack() {
+  char G[8] = "";
+
+  int t = 0;
+  int r = 0;
+
+  printf("Performing brute force attack...\n");
+
+  // 26^8 = 208827064576.
+  for (int i = 0; i < 208827064576; i++) {
+    denary_to_char(G, i, 26);
+    interact(&t, &r, G);
+    if (r == 1) {
+      printf("G = %s\n", G);
+      printf("t = %d\n", t);
+      printf("r = %d\n", r);
+      return;
+    }
+  }
+}
+
 void cleanup( int s ){
   // Close the buffered communication handles.
   fclose(target_in);
@@ -90,7 +128,7 @@ int main(int argc, char* argv[]) {
     }
 
     // Execute a function representing the attacker.
-    attack();
+    brute_force_attack();
 
   } else if (pid == 0) { // child
 
