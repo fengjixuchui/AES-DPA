@@ -29,7 +29,7 @@ bool match( int* t, const char* x, const char* y ) {
 }
 
 int main( int argc, char* argv[] ) {
-  char G[ 8 + 1 ], P[] = "pass";
+  char G[ 8 + 1 ], P[] = "password";
 
   while( true ) {
     if( 1 != fscanf( stdin, "%8s", G ) ) {

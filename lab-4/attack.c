@@ -64,15 +64,16 @@ void denary_to_char(char* string, int n, int base) {
 }
 
 void brute_force_attack() {
+
+  printf("Performing brute force attack...\n");
+
   char G[8] = "";
 
   int t = 0;
   int r = 0;
 
-  printf("Performing brute force attack...\n");
-
   // 26^8 = 208827064576.
-  for (int i = 0; i < 208827064576; i++) {
+  for (long i = 0; i < 208827064576; i++) {
     denary_to_char(G, i, 26);
     interact(&t, &r, G);
     if (r == 1) {
@@ -82,6 +83,41 @@ void brute_force_attack() {
       return;
     }
   }
+}
+
+void side_channel_attack() {
+
+  printf("Performing side channel attack...\n");
+  
+  char G[8 + 1] = "";
+  int len = 0;
+
+  int t = 0;
+  int r = 0;
+
+  while (t == 0) {
+    G[len++] = 'a';
+    interact(&t, &r, G);
+  }
+
+  int position = 0;
+  int current_t = 1;
+
+  while (r != 1) {
+    for (int i = 0; i < 26; i++) {
+      G[position] = int_to_char(i);
+      interact(&t, &r, G);
+      if (t > current_t) {
+        current_t++;
+        i += 26;
+      }
+    }
+    position++;
+  }
+
+  printf("G = %s\n", G);
+  printf("t = %d\n", t);
+  printf("r = %d\n", r);
 }
 
 void cleanup( int s ){
@@ -128,7 +164,7 @@ int main(int argc, char* argv[]) {
     }
 
     // Execute a function representing the attacker.
-    brute_force_attack();
+    side_channel_attack();
 
   } else if (pid == 0) { // child
 
