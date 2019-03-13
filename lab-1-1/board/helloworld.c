@@ -7,7 +7,7 @@
 
 #include "helloworld.h"
 
-int octetstr_rd( uint8_t* r, int n_r ) {
+int octetstr_rd(uint8_t* r, int n_r) {
   n_r = scale_uart_rd(SCALE_UART_MODE_BLOCKING);
   for (int i = 0; i < n_r; i++) {
     r[i] = scale_uart_rd(SCALE_UART_MODE_BLOCKING);
@@ -15,24 +15,26 @@ int octetstr_rd( uint8_t* r, int n_r ) {
   return n_r;
 }
 
-void octetstr_wr( const uint8_t* x, int n_x ) {
-  scale_uart_wr( SCALE_UART_MODE_BLOCKING, (uint8_t) n_x);
+void octetstr_wr(const uint8_t* x, int n_x) {
+  // char n1 = hex_to_char(n_x / 0x10);
+  // char n2 = hex_to_char(n_x / 0x10);
+  scale_uart_wr(SCALE_UART_MODE_BLOCKING, (uint8_t) n_x);
   for (int i = 0; i < n_x; i++) {
     scale_uart_wr(SCALE_UART_MODE_BLOCKING, x[i]);
   }
 }
 
-int main( int argc, char* argv[] ) {
+int main(int argc, char* argv[]) {
   // initialise the development board, using the default configuration
-  if( !scale_init( &SCALE_CONF ) ) {
+  if (!scale_init(&SCALE_CONF)) {
     return -1;
   }
 
   // char x[] = "hello world";
-  int n_x = 10;
-  uint8_t x[n_x];
+  int n = 10;
+  uint8_t x[10] = {0x65,0x66,0x67,0x68,0x69,0x70,0x71,0x72,0x73,0x74};
 
-  while( true ) {
+  while (true) {
     // read  the GPI     pin, and hence switch : t   <- GPI
     bool t = scale_gpio_rd( SCALE_GPIO_PIN_GPI        );
     // write the GPO     pin, and hence LED    : GPO <- t
@@ -47,11 +49,9 @@ int main( int argc, char* argv[] ) {
     // delay for 500 ms = 1/2 s
     scale_delay_ms( 500 );
 
-    for (uint8_t i = 0; i < (uint8_t) n_x; i++) {
-      x[i] = i;
-    }
+    // int n = strlen( x );
 
-    octetstr_wr(x, n_x);
+    octetstr_wr(x, n);
   }
 
   return 0;
