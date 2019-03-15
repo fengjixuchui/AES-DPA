@@ -16,20 +16,22 @@ endif
 
 PROJECT = helloworld
 
-  build-${PROJECT}      :
+  build-${PROJECT}        :
 	@make --no-builtin-rules -f ${TARGET}/build/lib/scale.mk BSP="${TARGET}/build" USB="/dev/scale-board" PROJECT="${PROJECT}" all
-  clean-${PROJECT}      :
+  clean-${PROJECT}        :
 	@make --no-builtin-rules -f ${TARGET}/build/lib/scale.mk BSP="${TARGET}/build" USB="/dev/scale-board" PROJECT="${PROJECT}" clean
 
-program-${PROJECT}      :
+program-${PROJECT}        :
 	@make --no-builtin-rules -f ${TARGET}/build/lib/scale.mk BSP="${TARGET}/build" USB="/dev/scale-board" PROJECT="${PROJECT}" program
-program-${PROJECT}-term :
+program-${PROJECT}-term   :
 	@putty -serial -sercfg 9600,8,n,1,N /dev/scale-board
+program-${PROJECT}-client :
+	@python client.py --mode="uart"   --data="04:DEADBEEF" --uart="/dev/scale-board" 
 
-emulate-${PROJECT}      :
-	@python -O emulator.py --host 127.0.0.1 --port 1234 --file ${PROJECT}.hex
-emulate-${PROJECT}-term :
+emulate-${PROJECT}        :
+	@python -O emulator.py --file="${PROJECT}.hex"         --host="127.0.0.1" --port="1234" 
+emulate-${PROJECT}-term   :
 	@putty -raw -P 1234 127.0.0.1
+emulate-${PROJECT}-client :
+	@python client.py --mode="socket" --data="04:DEADBEEF" --host="127.0.0.1" --port="1234"
 
-client       :
-	@python client.py '04:DEADBEEF'
