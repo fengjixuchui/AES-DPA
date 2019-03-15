@@ -24,6 +24,18 @@ def mmio_syscon_rd( emu, mode, addr, size, val, data ):
 def mmio_syscon_wr( emu, mode, addr, size, val, data ):
   pass
 
+mmio_uart_server = None
+mmio_uart_client = None
+
+def mmio_uart_open() :
+  global mmio_uart_server
+  global mmio_uart_client
+
+  if ( ( mmio_uart_server != None ) and ( mmio_uart_client != None ) ) :
+    return
+
+  mmio_uart_server = socket.socket( socket.AF_INET, socket.SOCK_STREAM ) ; mmio_uart_server.bind( ( args.host, args.port ) ) ; mmio_uart_server.listen( 1 ) ; ( mmio_uart_client, _ ) = mmio_uart_server.accept()
+
 def mmio_uart_can_rd( x ) :
   ( t, _, _ ) = select.select( [ x ], [], [], 0.0 ) ; return x in t
 def mmio_uart_can_wr( x ) :
@@ -31,28 +43,59 @@ def mmio_uart_can_wr( x ) :
 
 def mmio_uart_rd( emu, mode, addr, size, val, data ):
   if   ( addr == 0x40008000 ) : # U0RBR
-    if ( mmio_uart_can_rd( client ) ) :
-      emu.mem_write( 0x40008000, client.read( 1 ) )
+    ( LCR, ) = struct.unpack( '<I', emu.mem_read( 0x4000800C, 4 ) )
+
+    if ( ( LCR >> 7 ) & 1 ) :
+      return
+
+    mmio_uart_open()
+
+    if ( mmio_uart_can_rd( mmio_uart_client ) ) :
+      emu.mem_write( 0x40008000, mmio_uart_client.recv( 1 ) )
     else :
-      emu.mem_write( 0x40008000, ''.join( [ chr( x ) for x in [ 0 ] ] ) )
+      emu.mem_write( 0x40008000, struct.pack( '<I', 0x00000000 ) )
+
+  elif ( addr == 0x4000800C ) : # U0LCR
+    pass
+
   elif ( addr == 0x40008014 ) : # U0LSR
-    if ( mmio_uart_can_rd( client ) ) :
-      emu.mem_write( 0x40008014, chr( 0x21 ) ) # => no error, can   read, can   write
+    mmio_uart_open()
+
+    if ( mmio_uart_can_rd( mmio_uart_client ) ) :
+      emu.mem_write( 0x40008014, struct.pack( '<I', 0x00000021 ) ) # => no error, can   read, can write
     else :
-      emu.mem_write( 0x40008014, chr( 0x20 ) ) # => no error, can't read, can   write
+      emu.mem_write( 0x40008014, struct.pack( '<I', 0x00000020 ) ) # => no error, can't read, can write
 
 def mmio_uart_wr( emu, mode, addr, size, val, data ):
   if   ( addr == 0x40008000 ) : # U0THR
-    if ( mmio_uart_can_wr( client ) ) :
-      client.send( chr( val ) )
+    ( LCR, ) = struct.unpack( '<I', emu.mem_read( 0x4000800C, 4 ) )
+
+    if ( ( LCR >> 7 ) & 1 ) :
+      return
+
+    mmio_uart_open()
+
+    if ( mmio_uart_can_wr( mmio_uart_client ) ) :
+      mmio_uart_client.send( chr( val ) )
     else :
       pass
+
+  elif ( addr == 0x4000800C ) : # U0LCR
+    pass
+
   elif ( addr == 0x40008014 ) : # U0LSR
     pass
 
 def fetch( emu, addr, size, data ):
-  pass
+  if ( args.debug ) :
+    for instr in list( asm.disasm( ''.join( map( chr, emu.mem_read( addr, size ) ) ), size ) ) : 
+      print 'executing @ addr: %08X, size: %02d => instr: %s %s' % ( addr, size, instr.mnemonic, instr.op_str )
 
+      print 'R0  = %08X  R1  = %08X  R2  = %08X  R3  = %08X' % ( emu.reg_read( unicorn_arm.UC_ARM_REG_R0  ), emu.reg_read( unicorn_arm.UC_ARM_REG_R1  ), emu.reg_read( unicorn_arm.UC_ARM_REG_R2  ), emu.reg_read( unicorn_arm.UC_ARM_REG_R3  ) )
+      print 'R4  = %08X  R5  = %08X  R6  = %08X  R7  = %08X' % ( emu.reg_read( unicorn_arm.UC_ARM_REG_R4  ), emu.reg_read( unicorn_arm.UC_ARM_REG_R5  ), emu.reg_read( unicorn_arm.UC_ARM_REG_R6  ), emu.reg_read( unicorn_arm.UC_ARM_REG_R7  ) )
+      print 'R8  = %08X  R9  = %08X  R10 = %08X  R11 = %08X' % ( emu.reg_read( unicorn_arm.UC_ARM_REG_R8  ), emu.reg_read( unicorn_arm.UC_ARM_REG_R9  ), emu.reg_read( unicorn_arm.UC_ARM_REG_R10 ), emu.reg_read( unicorn_arm.UC_ARM_REG_R11 ) )
+      print 'R12 = %08X  R13 = %08X  R14 = %08X  R15 = %08X' % ( emu.reg_read( unicorn_arm.UC_ARM_REG_R12 ), emu.reg_read( unicorn_arm.UC_ARM_REG_R13 ), emu.reg_read( unicorn_arm.UC_ARM_REG_R14 ), emu.reg_read( unicorn_arm.UC_ARM_REG_R15 ) )
+ 
 if ( __name__ == '__main__' ) :
   # parse command line arguments
 
@@ -60,9 +103,9 @@ if ( __name__ == '__main__' ) :
 
   parser.add_argument( '--target', dest = 'target',              action = 'store', choices = [ 'lpc1114fn28', 'lpc1313fbd48' ], default = 'lpc1313fbd48' )
 
+  parser.add_argument( '--file',   dest = 'file',   type =  str, action = 'store' )
   parser.add_argument( '--host',   dest = 'host',   type =  str, action = 'store' )
   parser.add_argument( '--port',   dest = 'port',   type =  int, action = 'store' )
-  parser.add_argument( '--file',   dest = 'file',   type =  str, action = 'store' )
 
   parser.add_argument( '--debug',  dest = 'debug',               action = 'store_true' )
 
@@ -84,15 +127,17 @@ if ( __name__ == '__main__' ) :
     emu.mem_map( 0x00000000,  32 * 1024        ) # Figure  6:  32 kB => flash 
     emu.mem_map( 0x10000000,   4 * 1024        ) # Figure  6:   4 kB => SRAM
     emu.mem_map( 0x1FFF0000,  16 * 1024        ) # Figure  6:  16 kB => boot ROM
-    emu.mem_map( 0x40000000, 512 * 1024        ) # Figure  6: 512 kB => APB peripherals
-    emu.mem_map( 0x50000000,   2 * 1024 * 1024 ) # Figure  6:   2 MB => AHB peripherals
+    emu.mem_map( 0x40000000, 512 * 1024        ) # Figure  6: 512 kB => APB     peripheral bus
+    emu.mem_map( 0x50000000,   2 * 1024 * 1024 ) # Figure  6:   2 MB => AHB     peripheral bus
+    emu.mem_map( 0xE0000000,   1 * 1024 * 1024 ) # Figure  6:   1 MB => private peripheral bus
 
   elif ( args.target == 'lpc1313fbd48' ) :
     emu.mem_map( 0x00000000,  32 * 1024        ) # Figure 14:  32 kB => flash 
     emu.mem_map( 0x10000000,   8 * 1024        ) # Figure 14:   8 kB => SRAM
     emu.mem_map( 0x1FFF0000,  16 * 1024        ) # Figure 14:  16 kB => boot ROM
-    emu.mem_map( 0x40000000, 512 * 1024        ) # Figure 14: 512 kB => APB peripherals
-    emu.mem_map( 0x50000000,   2 * 1024 * 1024 ) # Figure 14:   2 MB => AHB peripherals
+    emu.mem_map( 0x40000000, 512 * 1024        ) # Figure  6: 512 kB => APB     peripheral bus
+    emu.mem_map( 0x50000000,   2 * 1024 * 1024 ) # Figure  6:   2 MB => AHB     peripheral bus
+    emu.mem_map( 0xE0000000,   1 * 1024 * 1024 ) # Figure  6:   1 MB => private peripheral bus
 
   # hook instruction fetch, and handle ctrl-c as forced exit
 
@@ -112,8 +157,6 @@ if ( __name__ == '__main__' ) :
 
   emu.hook_add( unicorn.UC_HOOK_MEM_READ,  mmio_uart_rd,   begin = 0x40008000, end = 0x4000C000 - 1 )
   emu.hook_add( unicorn.UC_HOOK_MEM_WRITE, mmio_uart_wr,   begin = 0x40008000, end = 0x4000C000 - 1 )
-
-  server = socket.socket( socket.AF_INET, socket.SOCK_STREAM ) ; server.bind( ( args.host, args.port ) ) ; server.listen( 1 ) ; ( client, _ ) = server.accept()
 
   # program emulator
 
