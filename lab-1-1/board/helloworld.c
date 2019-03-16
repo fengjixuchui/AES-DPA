@@ -7,18 +7,33 @@
 
 #include "helloworld.h"
 
+char hex_to_char(int n) {
+  if (n > 0xF) return -1;
+  else if (n < 0xA) return n + 0x30;
+  else return n + 0x37;
+}
+
 int octetstr_rd(uint8_t* r, int n_r) {
-  n_r = scale_uart_rd(SCALE_UART_MODE_BLOCKING);
-  for (int i = 0; i < n_r; i++) {
-    r[i] = scale_uart_rd(SCALE_UART_MODE_BLOCKING);
+  int i = 0;
+  while (true) {
+    if (i >= n_r) break;
+    uint8_t t = scale_uart_rd(SCALE_UART_MODE_BLOCKING);
+    if (t == '\x0D') {
+      break;
+    } else {
+      r[i] = t;
+      i++;
+    }
   }
-  return n_r;
+  return i;
 }
 
 void octetstr_wr(const uint8_t* x, int n_x) {
-  // char n1 = hex_to_char(n_x / 0x10);
-  // char n2 = hex_to_char(n_x / 0x10);
-  scale_uart_wr(SCALE_UART_MODE_BLOCKING, (uint8_t) n_x);
+  uint8_t n1 = hex_to_char(n_x / 0x10);
+  uint8_t n2 = hex_to_char(n_x % 0x10);
+  scale_uart_wr(SCALE_UART_MODE_BLOCKING, n1);
+  scale_uart_wr(SCALE_UART_MODE_BLOCKING, n2);
+  scale_uart_wr(SCALE_UART_MODE_BLOCKING, ':');
   for (int i = 0; i < n_x; i++) {
     scale_uart_wr(SCALE_UART_MODE_BLOCKING, x[i]);
   }
@@ -31,7 +46,7 @@ int main(int argc, char* argv[]) {
   }
 
   // char x[] = "hello world";
-  int n = 10;
+  // int n = 10;
   uint8_t x[10] = {0x65,0x66,0x67,0x68,0x69,0x70,0x71,0x72,0x73,0x74};
 
   while (true) {
@@ -51,7 +66,9 @@ int main(int argc, char* argv[]) {
 
     // int n = strlen( x );
 
-    octetstr_wr(x, n);
+    // uint8_t x[10];
+    // octetstr_rd(x, 10);
+    octetstr_wr(x, 10);
   }
 
   return 0;
