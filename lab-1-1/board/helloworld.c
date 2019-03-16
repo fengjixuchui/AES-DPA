@@ -35,8 +35,11 @@ void octetstr_wr(const uint8_t* x, int n_x) {
   scale_uart_wr(SCALE_UART_MODE_BLOCKING, n2);
   scale_uart_wr(SCALE_UART_MODE_BLOCKING, ':');
   for (int i = 0; i < n_x; i++) {
-    scale_uart_wr(SCALE_UART_MODE_BLOCKING, x[i]);
+    scale_uart_wr(SCALE_UART_MODE_BLOCKING, hex_to_char(x[i] / 0x10));
+    scale_uart_wr(SCALE_UART_MODE_BLOCKING, hex_to_char(x[i] % 0x10));
   }
+  scale_uart_wr(SCALE_UART_MODE_BLOCKING, '\x0D'); // CR
+  scale_uart_wr(SCALE_UART_MODE_BLOCKING, '\x0A'); // LF
 }
 
 int main(int argc, char* argv[]) {
@@ -47,7 +50,7 @@ int main(int argc, char* argv[]) {
 
   // char x[] = "hello world";
   // int n = 10;
-  uint8_t x[10] = {0x65,0x66,0x67,0x68,0x69,0x70,0x71,0x72,0x73,0x74};
+  uint8_t x[4] = {0xDE,0xAD,0xBE,0xEF};
 
   while (true) {
     // read  the GPI     pin, and hence switch : t   <- GPI
@@ -68,7 +71,7 @@ int main(int argc, char* argv[]) {
 
     // uint8_t x[10];
     // octetstr_rd(x, 10);
-    octetstr_wr(x, 10);
+    octetstr_wr(x, 4);
   }
 
   return 0;
