@@ -13,10 +13,20 @@ char hex_to_char(int n) {
   else return n + 0x37;
 }
 
+uint8_t char_to_hex(char c) {
+  if (c > 0x2F && c < 0x3A) return c - 0x30;
+  else if (c > 0x40 && c < 0x47) return c - 0x37;
+  else if (c > 0x60 && c < 0x67) return c - 0x57;
+  else return -1;
+}
+
 int octetstr_rd(uint8_t* r, int n_r) {
-  int i = 0;
-  while (true) {
-    if (i >= n_r) break;
+  char c1 = scale_uart_rd(SCALE_UART_MODE_BLOCKING);
+  char c2 = scale_uart_rd(SCALE_UART_MODE_BLOCKING);
+            scale_uart_rd(SCALE_UART_MODE_BLOCKING); // :
+  uint8_t length = (char_to_hex(c1) * 0x10) + char_to_hex(c2);
+  if (length > n_r) length = n_r;
+  for (int i = 0; i < length; i++) {
     uint8_t t = scale_uart_rd(SCALE_UART_MODE_BLOCKING);
     if (t == '\x0D') {
       break;
@@ -25,7 +35,7 @@ int octetstr_rd(uint8_t* r, int n_r) {
       i++;
     }
   }
-  return i;
+  return length;
 }
 
 void octetstr_wr(const uint8_t* x, int n_x) {
@@ -42,17 +52,27 @@ void octetstr_wr(const uint8_t* x, int n_x) {
   scale_uart_wr(SCALE_UART_MODE_BLOCKING, '\x0A'); // LF
 }
 
+void print(char* string) {
+  int length = strlen(string);
+  for (int i = 0; i < length; i++) {
+    scale_uart_wr(SCALE_UART_MODE_BLOCKING, string[i]);
+  }
+  scale_uart_wr(SCALE_UART_MODE_BLOCKING, '\x0D'); // CR
+  scale_uart_wr(SCALE_UART_MODE_BLOCKING, '\x0A'); // LF
+}
+
 int main(int argc, char* argv[]) {
   // initialise the development board, using the default configuration
   if (!scale_init(&SCALE_CONF)) {
     return -1;
   }
 
-  // char x[] = "hello world";
-  // int n = 10;
   uint8_t x[4] = {0xDE,0xAD,0xBE,0xEF};
+  uint8_t r[10];
 
   while (true) {
+    print("Loop started...");
+
     // read  the GPI     pin, and hence switch : t   <- GPI
     bool t = scale_gpio_rd( SCALE_GPIO_PIN_GPI        );
     // write the GPO     pin, and hence LED    : GPO <- t
@@ -62,16 +82,19 @@ int main(int argc, char* argv[]) {
              scale_gpio_wr( SCALE_GPIO_PIN_TRG, true  );
     // delay for 500 ms = 1/2 s
     scale_delay_ms( 500 );
+    print("First delay finished...");
     // write the trigger pin, and hence LED    : TRG <- 0 (negative edge)
              scale_gpio_wr( SCALE_GPIO_PIN_TRG, false );
     // delay for 500 ms = 1/2 s
     scale_delay_ms( 500 );
+    print("Second delay finished...");
 
-    // int n = strlen( x );
-
-    // uint8_t x[10];
-    // octetstr_rd(x, 10);
     octetstr_wr(x, 4);
+    print("octetstr_wr 1 returned...");
+    octetstr_rd(r, 10);
+    print("octetstr_rd returned...");
+    octetstr_wr(r, 2);
+    print("octetstr_wr 2 returned...");
   }
 
   return 0;
