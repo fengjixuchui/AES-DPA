@@ -32,7 +32,6 @@ int octetstr_rd(uint8_t* r, int n_r) {
     r[i] = (char_to_hex(c1) * 0x10) + char_to_hex(c2);
   }
   scale_uart_rd(SCALE_UART_MODE_BLOCKING); // CR
-  scale_uart_rd(SCALE_UART_MODE_BLOCKING); // LF
   return length;
 }
 
@@ -47,7 +46,6 @@ void octetstr_wr(const uint8_t* x, int n_x) {
     scale_uart_wr(SCALE_UART_MODE_BLOCKING, hex_to_char(x[i] % 0x10));
   }
   scale_uart_wr(SCALE_UART_MODE_BLOCKING, '\x0D'); // CR
-  scale_uart_wr(SCALE_UART_MODE_BLOCKING, '\x0A'); // LF
 }
 
 void print(char* string) {
@@ -56,7 +54,6 @@ void print(char* string) {
     scale_uart_wr(SCALE_UART_MODE_BLOCKING, string[i]);
   }
   scale_uart_wr(SCALE_UART_MODE_BLOCKING, '\x0D'); // CR
-  scale_uart_wr(SCALE_UART_MODE_BLOCKING, '\x0A'); // LF
 }
 
 void reverse_array(uint8_t* a, int length) {
@@ -77,23 +74,14 @@ int main(int argc, char* argv[]) {
   uint8_t r[4];
 
   while (true) {
-    // read  the GPI     pin, and hence switch : t   <- GPI
-    bool t = scale_gpio_rd( SCALE_GPIO_PIN_GPI        );
-    // write the GPO     pin, and hence LED    : GPO <- t
-             scale_gpio_wr( SCALE_GPIO_PIN_GPO, t     );
-
     // write the trigger pin, and hence LED    : TRG <- 1 (positive edge)
-             scale_gpio_wr( SCALE_GPIO_PIN_TRG, true  );
-    // delay for 500 ms = 1/2 s
-    scale_delay_ms( 500 );
-    // write the trigger pin, and hence LED    : TRG <- 0 (negative edge)
-             scale_gpio_wr( SCALE_GPIO_PIN_TRG, false );
-    // delay for 500 ms = 1/2 s
-    scale_delay_ms( 500 );
+    scale_gpio_wr( SCALE_GPIO_PIN_TRG, true  );
 
     int length = octetstr_rd(r, 8);
     reverse_array(r, length);
     octetstr_wr(r, length);
+
+    scale_gpio_wr( SCALE_GPIO_PIN_TRG, false );
   }
 
   return 0;
