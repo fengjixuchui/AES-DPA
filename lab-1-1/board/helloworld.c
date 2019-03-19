@@ -74,7 +74,6 @@ int main(int argc, char* argv[]) {
     return -1;
   }
 
-  uint8_t x[4] = {0xDE,0xAD,0xBE,0xEF};
   uint8_t r[4];
 
   while (true) {
@@ -92,15 +91,9 @@ int main(int argc, char* argv[]) {
     // delay for 500 ms = 1/2 s
     scale_delay_ms( 500 );
 
-    char x[] = "Hello, World!";
-
-    print(x);
-    reverse_array(x, strlen(x));
-    print(x);
-
-    octetstr_rd(r, 4);
-    reverse_array(r, 4);
-    octetstr_wr(r, 4);
+    int length = octetstr_rd(r, 8);
+    reverse_array(r, length);
+    octetstr_wr(r, length);
   }
 
   return 0;
