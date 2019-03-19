@@ -27,14 +27,12 @@ int octetstr_rd(uint8_t* r, int n_r) {
   uint8_t length = (char_to_hex(c1) * 0x10) + char_to_hex(c2);
   if (length > n_r) length = n_r;
   for (int i = 0; i < length; i++) {
-    uint8_t t = scale_uart_rd(SCALE_UART_MODE_BLOCKING);
-    if (t == '\x0D') {
-      break;
-    } else {
-      r[i] = t;
-      i++;
-    }
+    c1 = scale_uart_rd(SCALE_UART_MODE_BLOCKING);
+    c2 = scale_uart_rd(SCALE_UART_MODE_BLOCKING);
+    r[i] = (char_to_hex(c1) * 0x10) + char_to_hex(c2);
   }
+  scale_uart_rd(SCALE_UART_MODE_BLOCKING); // CR
+  scale_uart_rd(SCALE_UART_MODE_BLOCKING); // LF
   return length;
 }
 
@@ -61,6 +59,15 @@ void print(char* string) {
   scale_uart_wr(SCALE_UART_MODE_BLOCKING, '\x0A'); // LF
 }
 
+void reverse_array(uint8_t* a, int length) {
+  uint8_t temp;
+  for (int i = 0; i < length/2; i++) {
+    temp = a[i];
+    a[i] = a[length-1-i];
+    a[length-1-i] = temp;
+  }
+}
+
 int main(int argc, char* argv[]) {
   // initialise the development board, using the default configuration
   if (!scale_init(&SCALE_CONF)) {
@@ -68,11 +75,9 @@ int main(int argc, char* argv[]) {
   }
 
   uint8_t x[4] = {0xDE,0xAD,0xBE,0xEF};
-  uint8_t r[10];
+  uint8_t r[4];
 
   while (true) {
-    print("Loop started...");
-
     // read  the GPI     pin, and hence switch : t   <- GPI
     bool t = scale_gpio_rd( SCALE_GPIO_PIN_GPI        );
     // write the GPO     pin, and hence LED    : GPO <- t
@@ -82,19 +87,20 @@ int main(int argc, char* argv[]) {
              scale_gpio_wr( SCALE_GPIO_PIN_TRG, true  );
     // delay for 500 ms = 1/2 s
     scale_delay_ms( 500 );
-    print("First delay finished...");
     // write the trigger pin, and hence LED    : TRG <- 0 (negative edge)
              scale_gpio_wr( SCALE_GPIO_PIN_TRG, false );
     // delay for 500 ms = 1/2 s
     scale_delay_ms( 500 );
-    print("Second delay finished...");
 
-    octetstr_wr(x, 4);
-    print("octetstr_wr 1 returned...");
-    octetstr_rd(r, 10);
-    print("octetstr_rd returned...");
-    octetstr_wr(r, 2);
-    print("octetstr_wr 2 returned...");
+    char x[] = "Hello, World!";
+
+    print(x);
+    reverse_array(x, strlen(x));
+    print(x);
+
+    octetstr_rd(r, 4);
+    reverse_array(r, 4);
+    octetstr_wr(r, 4);
   }
 
   return 0;
