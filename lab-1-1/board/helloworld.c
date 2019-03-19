@@ -71,13 +71,13 @@ int main(int argc, char* argv[]) {
     return -1;
   }
 
-  uint8_t r[4];
+  uint8_t r[128];
 
   while (true) {
     // write the trigger pin, and hence LED    : TRG <- 1 (positive edge)
     scale_gpio_wr( SCALE_GPIO_PIN_TRG, true  );
 
-    int length = octetstr_rd(r, 8);
+    int length = octetstr_rd(r, 128);
     reverse_array(r, length);
     octetstr_wr(r, length);
 
