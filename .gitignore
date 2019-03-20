@@ -2,4 +2,8 @@ lab-1-1/board/helloworld.bin
 lab-1-1/board/helloworld.elf
 lab-1-1/board/helloworld.map
 lab-1-1/board/helloworld.hex
+coursework/board/target.bin
+coursework/board/target.elf
+coursework/board/target.map
+coursework/board/target.hex
 
