@@ -228,29 +228,29 @@ void aes_enc_rnd_mix(aes_gf28_t* s) {
   }
 }
 
-void aes_enc_keyexp(uint8_t* r, const uint8_t* k) {
-  uint8_t Nk = 11;
-  aes_gf28_col_t* rp = (aes_gf28_col_t*) (r);
-
-  memcpy(rp[0], k     , 4);
-  memcpy(rp[1], k + 4 , 4);
-  memcpy(rp[2], k + 8 , 4);
-  memcpy(rp[3], k + 12, 4);
-
-  for (int i = Nk; i < (Nb * (Nr + 1)); i++) {
-    aes_gf28_col_t t_0 = rp[i - 1];
-    aes_gf28_col_t t_1 = rp[i - Nb];
-
-    if ((i % Nk) == 0) {
-      t_0 = rc[i/Nk] ^ (AES_ENC_TBOX_4[ (t_0 >>  8) & 0xFF ] & 0x000000FF) ^
-                       (AES_ENC_TBOX_4[ (t_0 >> 16) & 0xFF ] & 0x0000FF00) ^
-                       (AES_ENC_TBOX_4[ (t_0 >> 24) & 0xFF ] & 0x00FF0000) ^
-                       (AES_ENC_TBOX_4[ (t_0 >>  0) & 0xFF ] & 0xFF000000) ;
-    }
-
-    rp[i] = t_0 ^ t_1;
-  }
-}
+// void aes_enc_keyexp(uint8_t* r, const uint8_t* k) {
+//   uint8_t Nk = 11;
+//   aes_gf28_col_t* rp = (aes_gf28_col_t*) (r);
+//
+//   memcpy(rp[0], k     , 4);
+//   memcpy(rp[1], k + 4 , 4);
+//   memcpy(rp[2], k + 8 , 4);
+//   memcpy(rp[3], k + 12, 4);
+//
+//   for (int i = Nk; i < (Nb * (Nr + 1)); i++) {
+//     aes_gf28_col_t t_0 = rp[i - 1];
+//     aes_gf28_col_t t_1 = rp[i - Nb];
+//
+//     if ((i % Nk) == 0) {
+//       t_0 = rc[i/Nk] ^ (AES_ENC_TBOX_4[ (t_0 >>  8) & 0xFF ] & 0x000000FF) ^
+//                        (AES_ENC_TBOX_4[ (t_0 >> 16) & 0xFF ] & 0x0000FF00) ^
+//                        (AES_ENC_TBOX_4[ (t_0 >> 24) & 0xFF ] & 0x00FF0000) ^
+//                        (AES_ENC_TBOX_4[ (t_0 >>  0) & 0xFF ] & 0xFF000000) ;
+//     }
+//
+//     rp[i] = t_0 ^ t_1;
+//   }
+// }
 
 void compute_tables() {
   for (aes_gf28_t a = 0; a < 256; a++) {
@@ -301,30 +301,30 @@ void aes_enc(uint8_t* c, uint8_t* m, uint8_t* k) {
   memcpy(c, s, 16);
 }
 
-void aes_enc_table(uint8_t* r, const uint8_t* m, const uint8_t* k) {
-  compute_tables();
-  aes_gf28_col_t* rkp = (aes_gf28_col_t*) (k);
-  aes_enc_keyexp(rkp, k);
-
-  aes_gf28_col_t t_0 = 0, t_1 = 0, t_2 = 0, t_3 = 0,
-                 t_4 = 0, t_5 = 0, t_6 = 0, t_7 = 0;
-
-  memcpy(t_0, m     , 4);
-  memcpy(t_1, m + 4 , 4);
-  memcpy(t_2, m + 8 , 4);
-  memcpy(t_3, m + 12, 4);
-
-  // Initial   round
-  AES_ENC_RND_INIT();
-  // (Nr - 1) iterated rounds
-  for (int i = 1; i < Nr; i++) {
-    AES_ENC_RND_ITER();
-  }
-  // Final round
-  AES_ENC_RND_FINI();
-
-  memcpy(r     , t_0, 4);
-  memcpy(r + 4 , t_1, 4);
-  memcpy(r + 8 , t_2, 4);
-  memcpy(r + 12, t_3, 4);
-}
+// void aes_enc_table(uint8_t* r, const uint8_t* m, const uint8_t* k) {
+//   compute_tables();
+//   aes_gf28_col_t* rkp = (aes_gf28_col_t*) (k);
+//   aes_enc_keyexp(rkp, k);
+//
+//   aes_gf28_col_t t_0 = 0, t_1 = 0, t_2 = 0, t_3 = 0,
+//                  t_4 = 0, t_5 = 0, t_6 = 0, t_7 = 0;
+//
+//   memcpy(t_0, m     , 4);
+//   memcpy(t_1, m + 4 , 4);
+//   memcpy(t_2, m + 8 , 4);
+//   memcpy(t_3, m + 12, 4);
+//
+//   // Initial   round
+//   AES_ENC_RND_INIT();
+//   // (Nr - 1) iterated rounds
+//   for (int i = 1; i < Nr; i++) {
+//     AES_ENC_RND_ITER();
+//   }
+//   // Final round
+//   AES_ENC_RND_FINI();
+//
+//   memcpy(r     , t_0, 4);
+//   memcpy(r + 4 , t_1, 4);
+//   memcpy(r + 8 , t_2, 4);
+//   memcpy(r + 12, t_3, 4);
+// }
