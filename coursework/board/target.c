@@ -7,8 +7,7 @@
 
 #include "target.h"
 
-uint8_t sbox_table[256] =
- {
+uint8_t sbox[256] = {
     0x63, 0x7C, 0x77, 0x7B, 0xF2, 0x6B, 0x6F, 0xC5, 0x30, 0x01, 0x67, 0x2B, 0xFE, 0xD7, 0xAB, 0x76,
     0xCA, 0x82, 0xC9, 0x7D, 0xFA, 0x59, 0x47, 0xF0, 0xAD, 0xD4, 0xA2, 0xAF, 0x9C, 0xA4, 0x72, 0xC0,
     0xB7, 0xFD, 0x93, 0x26, 0x36, 0x3F, 0xF7, 0xCC, 0x34, 0xA5, 0xE5, 0xF1, 0x71, 0xD8, 0x31, 0x15,
@@ -26,7 +25,6 @@ uint8_t sbox_table[256] =
     0xE1, 0xF8, 0x98, 0x11, 0x69, 0xD9, 0x8E, 0x94, 0x9B, 0x1E, 0x87, 0xE9, 0xCE, 0x55, 0x28, 0xDF,
     0x8C, 0xA1, 0x89, 0x0D, 0xBF, 0xE6, 0x42, 0x68, 0x41, 0x99, 0x2D, 0x0F, 0xB0, 0x54, 0xBB, 0x16
  };
-
 
 aes_gf28_t rc[16] = {0x01, 0x02, 0x04, 0x08, 0x10,
                      0x20, 0x40, 0x80, 0x1B, 0x36};
@@ -143,29 +141,6 @@ aes_gf28_t aes_gf28_inv(aes_gf28_t a) {
   return t_0;
 }
 
-aes_gf28_t sbox(aes_gf28_t a) {
-  uint8_t column = a / 0x10;
-  uint8_t row    = a % 0x10;
-  return sbox_table[column * 0x10 + row];
-}
-
-// aes_gf28_t sbox(aes_gf28_t a) {
-//   a = aes_gf28_inv(a);
-//
-//   a = ( 0x63   ) ^
-//       ( a      ) ^
-//       ( a << 1 ) ^
-//       ( a << 2 ) ^
-//       ( a << 3 ) ^
-//       ( a << 4 ) ^
-//       ( a >> 7 ) ^
-//       ( a >> 6 ) ^
-//       ( a >> 5 ) ^
-//       ( a >> 4 );
-//
-//       return a;
-// }
-
 void aes_enc_rnd_key(aes_gf28_t* s, aes_gf28_t* rk) {
   for (int i = 0; i < 16; i++) {
     s[i] = s[i] ^ rk[i];
@@ -174,7 +149,7 @@ void aes_enc_rnd_key(aes_gf28_t* s, aes_gf28_t* rk) {
 
 void aes_enc_rnd_sub(aes_gf28_t* s) {
   for (int i = 0; i < 16; i++) {
-    s[i] = sbox(s[i]);
+    s[i] = sbox[s[i]];
   }
 }
 
@@ -205,10 +180,10 @@ void aes_enc_rnd_mix(aes_gf28_t* s) {
 }
 
 void aes_enc_exp_step(aes_gf28_t* rk, aes_gf28_t rc) {
-  rk[0]  = rc ^ sbox(rk[13]) ^ rk[0];
-  rk[1]  =      sbox(rk[14]) ^ rk[1];
-  rk[2]  =      sbox(rk[15]) ^ rk[2];
-  rk[3]  =      sbox(rk[12]) ^ rk[3];
+  rk[0]  = rc ^ sbox[rk[13]] ^ rk[0];
+  rk[1]  =      sbox[rk[14]] ^ rk[1];
+  rk[2]  =      sbox[rk[15]] ^ rk[2];
+  rk[3]  =      sbox[rk[12]] ^ rk[3];
 
   rk[4]  = rk[0]  ^ rk[4];
   rk[5]  = rk[1]  ^ rk[5];
