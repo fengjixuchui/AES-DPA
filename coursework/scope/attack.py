@@ -1,13 +1,13 @@
 # Copyright (C) 2018 Daniel Page <csdsp@bristol.ac.uk>
 #
-# Use of this source code is restricted per the CC BY-NC-ND license, a copy of 
-# which can be found via http://creativecommons.org (and should be included as 
+# Use of this source code is restricted per the CC BY-NC-ND license, a copy of
+# which can be found via http://creativecommons.org (and should be included as
 # LICENSE.txt within the associated archive or repository).
 
 import numpy, struct, sys
 
 ## Load  a trace data set from an on-disk file.
-## 
+##
 ## \param[in] f the filename to load  trace data set from
 ## \return    t the number of traces
 ## \return    s the number of samples in each trace
@@ -45,7 +45,7 @@ def traces_ld( f ) :
   return t, s, M, C, T
 
 ## Store a trace data set into an on-disk file.
-## 
+##
 ## \param[in] f the filename to store trace data set into
 ## \param[in] t the number of traces
 ## \param[in] s the number of samples in each trace
@@ -82,8 +82,14 @@ def traces_st( f, t, s, M, C, T ) :
 ## \param[in] argc number of command line arguments
 ## \param[in] argv           command line arguments
 
-def attack( argc, argv )
-  pass
+def attack( argc, argv ) :
+  if (argc != 2):
+    print("Usage: python attack.py filename")
+    return
+  print("Loading traces...")
+  t, s, M, C, T = traces_ld(argv[1])
+  print("Traces loaded.")
+  print("{0} traces loaded successfully.".format(t))
 
 if ( __name__ == '__main__' ) :
   attack( len( sys.argv ), sys.argv )
