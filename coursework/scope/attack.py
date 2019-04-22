@@ -1,95 +1,161 @@
-# Copyright (C) 2018 Daniel Page <csdsp@bristol.ac.uk>
-#
-# Use of this source code is restricted per the CC BY-NC-ND license, a copy of
-# which can be found via http://creativecommons.org (and should be included as
-# LICENSE.txt within the associated archive or repository).
+import binascii, select, serial, socket, sys, picoscope.ps2000a as ps2000a, time, numpy
 
-import numpy, struct, sys
+PS2000A_RATIO_MODE_NONE      = 0 # Section 3.18.1
 
-## Load  a trace data set from an on-disk file.
+def scope_adc2volts( range, x ) :
+    return ( float( x ) / float( scope_adc_max ) ) * range;
+
+def scope_volts2adc( range, x ) :
+    return ( float( x ) * float( scope_adc_max ) ) / range;
+
+## Convert a string (e.g., string, or bytearray) into a list (or sequence).
 ##
-## \param[in] f the filename to load  trace data set from
-## \return    t the number of traces
-## \return    s the number of samples in each trace
-## \return    M a t-by-16 matrix of AES-128  plaintexts
-## \return    C a t-by-16 matrix of AES-128 ciphertexts
-## \return    T a t-by-s  matrix of samples, i.e., the traces
+## \param[in] x  a  string
+## \return       a  list   r st. r[ i ] = ord( x[ i ] )
 
-def traces_ld( f ) :
-  fd = open( f, "rb" )
+def str2seq( x ) :
+    return          [ ord( t ) for t in x ]
 
-  def rd( x ) :
-    ( r, ) = struct.unpack( x, fd.read( struct.calcsize( x ) ) ) ; return r
-
-  t = rd( '<I' )
-  s = rd( '<I' )
-
-  M = numpy.zeros( ( t, 16 ), dtype = numpy.uint8 )
-  C = numpy.zeros( ( t, 16 ), dtype = numpy.uint8 )
-  T = numpy.zeros( ( t,  s ), dtype = numpy.int16 )
-
-  for i in range( t ) :
-    for j in range( 16 ) :
-      M[ i, j ] = rd( '<B' )
-
-  for i in range( t ) :
-    for j in range( 16 ) :
-      C[ i, j ] = rd( '<B' )
-
-  for i in range( t ) :
-    for j in range( s  ) :
-      T[ i, j ] = rd( '<h' )
-
-  fd.close()
-
-  return t, s, M, C, T
-
-## Store a trace data set into an on-disk file.
+## Convert a list (or sequence) into a string (e.g., string, or bytearray).
 ##
-## \param[in] f the filename to store trace data set into
-## \param[in] t the number of traces
-## \param[in] s the number of samples in each trace
-## \param[in] M a t-by-16 matrix of AES-128  plaintexts
-## \param[in] C a t-by-16 matrix of AES-128 ciphertexts
-## \param[in] T a t-by-s  matrix of samples, i.e., the traces
+## \param[in] x  a  list
+## \return       a  string r st. r[ i ] = chr( x[ i ] )
 
-def traces_st( f, t, s, M, C, T ) :
-  fd = open( f, "wb" )
+def seq2str( x ) :
+    return ''.join( [ chr( t ) for t in x ] )
 
-  def wr( x, y ) :
-    fd.write( struct.pack( x, y ) )
-
-  wr( '<I', t,  )
-  wr( '<I', s,  )
-
-  for i in range( t ) :
-    for j in range( 16 ) :
-      wr( '<B', M[ i, j ] )
-
-  for i in range( t ) :
-    for j in range( 16 ) :
-      wr( '<B', C[ i, j ] )
-
-  for i in range( t ) :
-    for j in range( s  ) :
-      wr( '<h', T[ i, j ] )
-
-  fd.close()
-
-## Attack implementation, as invoked from main after checking command line
-## arguments.
+## Open  (or start)  communication with SCALE development board.
 ##
-## \param[in] argc number of command line arguments
-## \param[in] argv           command line arguments
+## \return    fd a communication end-point
 
-def attack( argc, argv ) :
-  if (argc != 2):
-    print("Usage: python attack.py filename")
-    return
-  print("Loading traces...")
-  t, s, M, C, T = traces_ld(argv[1])
-  print("Traces loaded.")
-  print("{0} traces loaded successfully.".format(t))
+def board_open() :
+    if   ( args.mode == 'uart'   ) :
+        fd = serial.Serial( port = args.uart, baudrate = 9600, bytesize = serial.EIGHTBITS, parity = serial.PARITY_NONE, stopbits = serial.STOPBITS_ONE, timeout = None )
+    elif ( args.mode == 'socket' ) :
+        fd = socket.socket( socket.AF_INET, socket.SOCK_STREAM ) ; fd.connect( ( args.host, args.port ) ) ; fd = fd.makefile( mode = 'rwb', bufsize = 1024 )
 
-if ( __name__ == '__main__' ) :
-  attack( len( sys.argv ), sys.argv )
+    return fd
+
+## Close (or finish) communication with SCALE development board.
+##
+## \param[in] fd a communication end-point
+
+def board_close( fd ) :
+    fd.close()
+
+## Read  (or recieve) a string from SCALE development board, automatically
+## managing CR-only EOL semantics.
+##
+## \param[in] fd a communication end-point
+## \return    r  a string (e.g., string, or bytearray)
+
+def board_rdln( fd    ) :
+    r = ''
+
+    while( True ):
+        t = fd.read( 1 )
+
+        if( t == '\x0D' ) :
+            break
+        else:
+            r += t
+
+    return r
+
+## Write (or send)    a string to   SCALE development board, automatically
+## managing CR-only EOL semantics.
+##
+## \param[in] fd a communication end-point
+## \param[in] x  a string (e.g., string, or bytearray)
+
+def board_wrln( fd, x ) :
+    fd.write( x + '\x0D' ) ; fd.flush()
+
+## Convert a length-prefixed, hexadecimal octet string into a string.
+##
+## \param[in] x  an octet string
+## \return       a  string
+## \throw        ValueError if the length prefix and data do not match
+
+def octetstr2str( x ) :
+    t = x.split( ':' ) ; n = int( t[ 0 ], 16 ) ; x = binascii.a2b_hex( t[ 1 ] )
+
+    if( n != len( x ) ) :
+        raise ValueError
+    else :
+        return x
+
+## Convert a string into a length-prefixed, hexadecimal octet string.
+##
+## \param[in] x  an octet string
+## \return       a  string
+
+def str2octetstr( x ) :
+    return ( '%02X' % ( len( x ) ) ) + ':' + ( binascii.b2a_hex( x ) )
+
+def attack() :
+    # Section 3.32, Page 60; Step  1: open  the oscilloscope
+    scope = ps2000a.PS2000a()
+
+    # Section 3.28, Page 56
+    scope_adc_min = scope.getMinValue()
+    # Section 3.30, Page 58
+    scope_adc_max = scope.getMaxValue()
+
+    # Section 3.39, Page 69; Step  2: configure channels
+    scope.setChannel( channel = 'A', enabled = True, coupling = 'DC', VRange =   5.0E-0 )
+    scope_range_chan_a =   5.0e-0
+    scope.setChannel( channel = 'B', enabled = True, coupling = 'DC', VRange = 500.0E-3 )
+    scope_range_chan_b = 500.0e-3
+
+    # Section 3.13, Page 36; Step  3: configure timebase
+    ( _, samples, samples_max ) = scope.setSamplingInterval( 4.0E-9, 2.0E-3 )
+
+    # Section 3.56, Page 93; Step  4: configure trigger
+    scope.setSimpleTrigger( 'A', threshold_V = 2.0E-0, direction = 'Rising', timeout_ms = 0 )
+
+    fd = board_open()
+
+    t = 200
+
+    T = numpy.zeros((t, samples))
+    M = numpy.zeros((t, 16))
+    C = numpy.zeros((t, 16))
+
+    for i in range(t):
+        # Section 3.37, Page 65; Step  5: start acquisition
+        scope.runBlock()
+
+        m = [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x08,
+             0x09, 0x0A, 0x0B, 0X0C, 0X0D, 0X0E, 0X0F]
+
+        board_wrln( fd, "01:01" )
+        board_wrln( fd, str2octetstr( seq2str( m ) ) )
+        board_wrln( fd, "00:" )
+
+        c = str2seq( octetstr2str( board_rdln( fd ) ) )
+
+        for n in range(16):
+            M[i,n] = m[n]
+            C[i,n] = c[n]
+
+        # Section 3.26, Page 54; Step  6: wait for acquisition to complete
+        while ( not scope.isReady() ) : time.sleep( 1 )
+
+        # Section 3.40, Page 71; Step  7: configure buffers
+        # Section 3.18, Page 43; Step  8; transfer  buffers
+        ( A, _, _ ) = scope.getDataRaw( channel = 'A', numSamples = samples, downSampleMode = PS2000A_RATIO_MODE_NONE )
+        ( B, _, _ ) = scope.getDataRaw( channel = 'B', numSamples = samples, downSampleMode = PS2000A_RATIO_MODE_NONE )
+
+        # Section 3.2,  Page 25; Step 10: stop  acquisition
+        scope.stop()
+
+        for j in range(samples):
+            T[i,j] = scope_adc2volts( scope_range_chan_b, B[ i ] )
+
+    board_close( fd )
+
+    # Section 3.2,  Page 25; Step 13: close the oscilloscope
+    scope.close()
+
+    return t, samples, M, C, T
