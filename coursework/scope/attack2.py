@@ -1,4 +1,6 @@
 import argparse, binascii, select, serial, socket, sys, picoscope.ps2000a as ps2000a, time, numpy, random
+import matplotlib
+import matplotlib.pyplot as plt
 
 PS2000A_RATIO_MODE_NONE      = 0 # Section 3.18.1
 
@@ -93,11 +95,12 @@ def str2octetstr( x ) :
     return ( '%02X' % ( len( x ) ) ) + ':' + ( binascii.b2a_hex( x ) )
 
 def client() :
+
     fd = board_open() ;
 
-    t = 10
+    t = 3
 
-    T = numpy.zeros((t, 10000))
+    T = numpy.zeros((t, 1000000))
     M = numpy.zeros((t, 16))
     C = numpy.zeros((t, 16))
 
@@ -113,9 +116,27 @@ def client() :
         m = seq2str( m )
         m = str2octetstr( m )
 
+        # Section 3.39, Page 69; Step  2: configure channels
+        scope.setChannel( channel = 'A', enabled = True, coupling = 'DC', VRange =   5.0E-0 )
+        scope_range_chan_a =   5.0e-0
+        scope.setChannel( channel = 'B', enabled = True, coupling = 'DC', VRange = 500.0E-3 )
+        scope_range_chan_b = 500.0e-3
+
+        # Section 3.13, Page 36; Step  3: configure timebase
+        ( _, samples, samples_max ) = scope.setSamplingInterval( 4.0E-9, 2.0E-3 )
+
+        # Section 3.56, Page 93; Step  4: configure trigger
+        scope.setSimpleTrigger( 'A', threshold_V = 2.0E-0, direction = 'Rising', timeout_ms = 0 )
+
+        # Section 3.37, Page 65; Step  5: start acquisition
+        scope.runBlock()
+
         board_wrln( fd, "01:01" )
         board_wrln( fd,  m      )
         board_wrln( fd, "00:"   )
+
+        # Section 3.26, Page 54; Step  6: wait for acquisition to complete
+        while ( not scope.isReady() ) : time.sleep( 1 )
 
         c = board_rdln( fd )
 
@@ -127,9 +148,21 @@ def client() :
             M[i,n] = original_m[n]
             C[i,n] = c[n]
 
+        # Section 3.40, Page 71; Step  7: configure buffers
+        # Section 3.18, Page 43; Step  8; transfer  buffers
+        ( B, _, _ ) = scope.getDataRaw( channel = 'B', numSamples = samples, downSampleMode = PS2000A_RATIO_MODE_NONE )
+
+        # Section 3.2,  Page 25; Step 10: stop  acquisition
+        scope.stop()
+
+        for j in range(samples):
+            T[i,j] = scope_adc2volts( scope_range_chan_b, B[ i ] )
+
     board_close( fd )
 
     print("Completed...")
+
+    return t, samples, M, C, T
 
 if ( __name__ == '__main__' ) :
     # parse command line arguments
@@ -144,4 +177,17 @@ if ( __name__ == '__main__' ) :
 
     # execute client implementation
 
-    client()
+    # Section 3.32, Page 60; Step  1: open  the oscilloscope
+    scope = ps2000a.PS2000a()
+
+    # Section 3.28, Page 56
+    scope_adc_min = scope.getMinValue()
+    # Section 3.30, Page 58
+    scope_adc_max = scope.getMaxValue()
+
+    t, s, M, C, T = client()
+
+    fig, ax = plt.subplots()
+    ax.plot(T[0,0:s])
+    fig.savefig("plot.png")
+    plt.show()
