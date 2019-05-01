@@ -2,7 +2,9 @@ import argparse, binascii, select, serial, socket, sys, picoscope.ps2000a as ps2
 import matplotlib
 import matplotlib.pyplot as plt
 
-PS2000A_RATIO_MODE_NONE      = 0 # Section 3.18.1
+PS2000A_RATIO_MODE_NONE = 0 # Section 3.18.1
+DURATION                = 0.2E-3
+INTERVAL                = 4.0E-9
 
 def scope_adc2volts( range, x ) :
     return ( float( x ) / float( scope_adc_max ) ) * range;
@@ -98,9 +100,11 @@ def client() :
 
     fd = board_open() ;
 
-    t = 3
+    t = 150
 
-    T = numpy.zeros((t, 1000000))
+    s = DURATION / INTERVAL
+
+    T = numpy.zeros((t,  s))
     M = numpy.zeros((t, 16))
     C = numpy.zeros((t, 16))
 
@@ -123,7 +127,7 @@ def client() :
         scope_range_chan_b = 500.0e-3
 
         # Section 3.13, Page 36; Step  3: configure timebase
-        ( _, samples, samples_max ) = scope.setSamplingInterval( 4.0E-9, 2.0E-3 )
+        ( _, samples, samples_max ) = scope.setSamplingInterval( INTERVAL, DURATION )
 
         # Section 3.56, Page 93; Step  4: configure trigger
         scope.setSimpleTrigger( 'A', threshold_V = 2.0E-0, direction = 'Rising', timeout_ms = 0 )
@@ -144,9 +148,8 @@ def client() :
         c = octetstr2str( c )
         c = str2seq( c )
 
-        for n in range(16):
-            M[i,n] = original_m[n]
-            C[i,n] = c[n]
+        M[i] = original_m
+        C[i] = c
 
         # Section 3.40, Page 71; Step  7: configure buffers
         # Section 3.18, Page 43; Step  8; transfer  buffers
@@ -155,8 +158,7 @@ def client() :
         # Section 3.2,  Page 25; Step 10: stop  acquisition
         scope.stop()
 
-        for j in range(samples):
-            T[i,j] = scope_adc2volts( scope_range_chan_b, B[ i ] )
+        T[i] = B
 
     board_close( fd )
 
@@ -188,6 +190,6 @@ if ( __name__ == '__main__' ) :
     t, s, M, C, T = client()
 
     fig, ax = plt.subplots()
-    ax.plot(T[0,0:s])
+    ax.plot(T[0])
     fig.savefig("plot.png")
     plt.show()
