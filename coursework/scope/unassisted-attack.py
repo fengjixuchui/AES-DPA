@@ -110,6 +110,18 @@ hamming_weights = [0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4,
                    3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7,
                    4, 5, 5, 6, 5, 6, 6, 7, 5, 6, 6, 7, 6, 7, 7, 8]
 
+def correlation_coefficient(A,B):
+    # Rowwise mean of input arrays & subtract from input arrays themeselves
+    A_mA = A - A.mean(1)[:,None]
+    B_mB = B - B.mean(1)[:,None]
+
+    # Sum of squares across rows
+    ssA = (A_mA**2).sum(1);
+    ssB = (B_mB**2).sum(1);
+
+    # Finally get corr coeff
+    return numpy.dot(A_mA,B_mB.T)/numpy.sqrt(numpy.dot(ssA[:,None],ssB[None]))
+
 def attack( argv ) :
     print("Loading traces...")
     t, s, M, C, T = traces_ld( argv[1] )
@@ -121,20 +133,7 @@ def attack( argv ) :
 
     key = []
 
-    print("Finding trace with highest correlation for byte 0...")
-    for i in range(t):
-        for j in range(256):
-            H[i,j] = hamming_weights[ sbox[M[i,0] ^ j] ]
-
-    max_correlation = 0
-    new_trace = 0
-
-    for i in range(256):
-        for j in range(3000,6000):
-            correlation = numpy.abs(numpy.corrcoef(H[:,i], T[0:t,j])[0][1])
-            if (correlation > max_correlation):
-                max_correlation = correlation
-                new_trace = j
+    T = T[0:t, 0:9000]
 
     for k in range(16):
         print("Attacking byte {0}...".format(k))
@@ -142,19 +141,8 @@ def attack( argv ) :
             for j in range(256):
                 H[i,j] = hamming_weights[ sbox[M[i,k] ^ j] ]
 
-        max_correlation = 0
-        byte = 0
-        current_trace = new_trace
-
-        for i in range(256):
-            for j in range(current_trace - 400, current_trace + 400):
-                correlation = numpy.abs(numpy.corrcoef(H[:,i], T[0:t,j])[0][1])
-                if (correlation > max_correlation):
-                    max_correlation = correlation
-                    byte = i
-                    new_trace = j
-
-        key.append(byte)
+        R = numpy.abs(correlation_coefficient(H.T, T.T))
+        key.append(numpy.argmax(numpy.nanmax(R, axis=1)))
 
     print(key)
 
