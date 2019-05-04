@@ -273,7 +273,7 @@ def attack( argv ) :
 
     key = []
 
-    T = T[0:t, 0:9000]
+    T = T[:, 0:9000]
 
     for k in range(16):
         print("Attacking byte {0}...".format(k))
