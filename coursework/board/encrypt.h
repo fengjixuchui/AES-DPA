@@ -22,7 +22,6 @@ typedef uint32_t aes_gf28_col_t;
 aes_gf28_t xtime(aes_gf28_t a);
 aes_gf28_t aes_gf28_mul(aes_gf28_t a, aes_gf28_t b);
 aes_gf28_t aes_gf28_inv(aes_gf28_t a);
-aes_gf28_t sbox(aes_gf28_t a);
 void aes_enc_exp_step(aes_gf28_t* rk, aes_gf28_t rc);
 void aes_enc_rnd_key(aes_gf28_t* s, const aes_gf28_t* rk);
 void aes_enc_rnd_sub(aes_gf28_t* s);
