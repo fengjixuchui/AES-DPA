@@ -9,6 +9,13 @@
 #include <stdlib.h>
 #include <time.h>
 
+#define AES_ENC_RND_KEY_STEP(a, b, c, d) { \
+  s[ a ] = s[ a ] ^ rk[ a ];               \
+  s[ b ] = s[ b ] ^ rk[ b ];               \
+  s[ c ] = s[ c ] ^ rk[ c ];               \
+  s[ d ] = s[ d ] ^ rk[ d ];               \
+}
+
 #define AES_ENC_RND_MIX_STEP(a, b, c, d) { \
   aes_gf28_t __a1 = s[ a ];                \
   aes_gf28_t __b1 = s[ b ];                \
@@ -140,11 +147,18 @@ void aes_enc_exp_step(aes_gf28_t* rk, aes_gf28_t rc) {
   rk[15] = rk[11] ^ rk[15];
 }
 
-void aes_enc_rnd_key(aes_gf28_t* s, aes_gf28_t* rk) {
+void aes_enc_rnd_key(aes_gf28_t* s, const aes_gf28_t* rk) {
   for (int i = 0; i < 16; i++) {
     s[i] = s[i] ^ rk[i];
   }
 }
+
+// void aes_enc_rnd_key(aes_gf28_t* s, const aes_gf28_t* rk) {
+//   AES_ENC_RND_KEY_STEP(  0,  1,  2,  3 );
+//   AES_ENC_RND_KEY_STEP(  4,  5,  6,  7 );
+//   AES_ENC_RND_KEY_STEP(  8,  9, 10, 11 );
+//   AES_ENC_RND_KEY_STEP( 12, 13, 14, 15 );
+// }
 
 // Shuffle an array into pseudo-random order. Found online at:
 // https://benpfaff.org/writings/clc/shuffle.html
