@@ -152,10 +152,9 @@ void aes_enc_rnd_key(aes_gf28_t* s, const aes_gf28_t* rk) {
 // https://benpfaff.org/writings/clc/shuffle.html
 void shuffle(int *array, size_t n) {
   if (n > 1) {
-    size_t i;
-    for (i = 0; i < n - 1; i++) {
+    for (size_t i = 0; i < n - 1; i++) {
       size_t j = i + rand() / (RAND_MAX / (n - i) + 1);
-      int t = array[j];
+      int    t = array[j];
       array[j] = array[i];
       array[i] = t;
     }
