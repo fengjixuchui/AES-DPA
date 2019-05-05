@@ -317,10 +317,10 @@ int main( int argc, char* argv[] ) {
           break;
         }
 
-        aes_init(       k2, r );
+        aes_init(       k, r );
 
         scale_gpio_wr( SCALE_GPIO_PIN_TRG,  true );
-        aes     ( c, m, k2, r );
+        aes     ( c, m, k, r );
         scale_gpio_wr( SCALE_GPIO_PIN_TRG, false );
 
                           octetstr_wr( c, SIZEOF_BLK );
