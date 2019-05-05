@@ -47,6 +47,27 @@ uint8_t sbox[256] = {
   s[ d ] = __a3 ^ __b1 ^ __c1 ^ __d2;      \
 }
 
+#define AES_ENC_RND_MIX_DUMMY(a, b, c, d) {     \
+  aes_gf28_t __a1 = s[ a ];                     \
+  aes_gf28_t __b1 = s[ b ];                     \
+  aes_gf28_t __c1 = s[ c ];                     \
+  aes_gf28_t __d1 = s[ d ];                     \
+  aes_gf28_t __a2 = xtime( __a1 );              \
+  aes_gf28_t __b2 = xtime( __b1 );              \
+  aes_gf28_t __c2 = xtime( __c1 );              \
+  aes_gf28_t __d2 = xtime( __d1 );              \
+  aes_gf28_t __a3 = __a1 ^ __a2;                \
+  aes_gf28_t __b3 = __b1 ^ __b2;                \
+  aes_gf28_t __c3 = __c1 ^ __c2;                \
+  aes_gf28_t __d3 = __d1 ^ __d2;                \
+  aes_gf28_t fake1 = __a2 ^ __b3 ^ __c1 ^ __d1; \
+  aes_gf28_t fake2 = __a1 ^ __b2 ^ __c3 ^ __d1; \
+  aes_gf28_t fake3 = __a1 ^ __b1 ^ __c2 ^ __d3; \
+  aes_gf28_t fake4 = __a3 ^ __b1 ^ __c1 ^ __d2; \
+  (void) fake1; (void) fake2;                   \
+  (void) fake3; (void) fake4;                   \
+}
+
 aes_gf28_t rc[16] = {0x01, 0x02, 0x04, 0x08, 0x10,
                      0x20, 0x40, 0x80, 0x1B, 0x36};
 
@@ -193,6 +214,7 @@ void aes_enc_rnd_mix(aes_gf28_t* s) {
   for (int i = 0; i < 4; i++, s += 4 ) {
     AES_ENC_RND_MIX_STEP(0, 1, 2, 3);
   }
+  AES_ENC_RND_MIX_DUMMY(0, 1, 2, 3);
 }
 
 void aes_enc(uint8_t* c, uint8_t* m, uint8_t* k) {
