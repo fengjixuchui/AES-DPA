@@ -48,10 +48,10 @@ uint8_t sbox[256] = {
 }
 
 #define AES_ENC_RND_MIX_DUMMY(a, b, c, d) {     \
-  aes_gf28_t __a1 = s[ a ];                     \
-  aes_gf28_t __b1 = s[ b ];                     \
-  aes_gf28_t __c1 = s[ c ];                     \
-  aes_gf28_t __d1 = s[ d ];                     \
+  aes_gf28_t __a1 = r[ a ];                     \
+  aes_gf28_t __b1 = r[ b ];                     \
+  aes_gf28_t __c1 = r[ c ];                     \
+  aes_gf28_t __d1 = r[ d ];                     \
   aes_gf28_t __a2 = xtime( __a1 );              \
   aes_gf28_t __b2 = xtime( __b1 );              \
   aes_gf28_t __c2 = xtime( __c1 );              \
@@ -210,7 +210,7 @@ void aes_enc_rnd_row(aes_gf28_t* s) {
   s[3]  = temp[15];
 }
 
-void aes_enc_rnd_mix(aes_gf28_t* s) {
+void aes_enc_rnd_mix(aes_gf28_t* s, aes_gf28_t* r) {
   for (int i = 0; i < 4; i++, s += 4 ) {
     AES_ENC_RND_MIX_STEP(0, 1, 2, 3);
   }
@@ -219,19 +219,23 @@ void aes_enc_rnd_mix(aes_gf28_t* s) {
 
 void aes_enc(uint8_t* c, uint8_t* m, uint8_t* k) {
   aes_gf28_t rk[4 * Nb], s[4 * Nb];
+  aes_gf28_t r[4 * Nb];
 
   memcpy(s , m, 16);
   memcpy(rk, k, 16);
 
   // Initial round
   aes_enc_rnd_key(s, rk);
+  /* Dummy add round key */ aes_enc_rnd_key(r, r);
   // (Nr - 1) iterated rounds
   for (int i = 1; i < Nr; i++) {
     aes_enc_rnd_sub(s);
+    /* Dummy sbox */ aes_enc_rnd_sub(r);
     aes_enc_rnd_row(s);
-    aes_enc_rnd_mix(s);
+    aes_enc_rnd_mix(s, r);
     aes_enc_exp_step(rk, rc[i - 1]);
     aes_enc_rnd_key(s, rk);
+    /* Dummy add round key */ aes_enc_rnd_key(r, r);
   }
   // Final round
   aes_enc_rnd_sub(s);

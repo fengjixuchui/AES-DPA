@@ -26,7 +26,7 @@ void aes_enc_exp_step(aes_gf28_t* rk, aes_gf28_t rc);
 void aes_enc_rnd_key(aes_gf28_t* s, const aes_gf28_t* rk);
 void aes_enc_rnd_sub(aes_gf28_t* s);
 void aes_enc_rnd_row(aes_gf28_t* s);
-void aes_enc_rnd_mix(aes_gf28_t* s);
+void aes_enc_rnd_mix(aes_gf28_t* s, aes_gf28_t* r);
 void aes_enc(uint8_t* c, uint8_t* m, uint8_t* k);
 
 #endif
