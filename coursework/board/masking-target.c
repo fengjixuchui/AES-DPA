@@ -172,11 +172,29 @@ void calculate_mix_column_masks() {
 }
 
 void mask_rk(uint8_t* rk) {
-  for (int i = 0; i < 4; i++, rk += 4) {
-    rk[0] ^= m1_ ^ m;
-    rk[1] ^= m2_ ^ m;
-    rk[2] ^= m3_ ^ m;
-    rk[3] ^= m4_ ^ m;
+  for (int i = 0; i < 4; i++) {
+    rk[0 + i*4] ^= m1_ ^ m;
+    rk[1 + i*4] ^= m2_ ^ m;
+    rk[2 + i*4] ^= m3_ ^ m;
+    rk[3 + i*4] ^= m4_ ^ m;
+  }
+}
+
+void mask_s(uint8_t* s) {
+  for (int i = 0; i < 4; i++) {
+    s[0 + i*4] ^= m1_;
+    s[1 + i*4] ^= m2_;
+    s[2 + i*4] ^= m3_;
+    s[3 + i*4] ^= m4_;
+  }
+}
+
+void remask(uint8_t* s) {
+  for (int i = 0; i < 4; i++) {
+    s[0 + i*4] ^= m_ ^ m1;
+    s[1 + i*4] ^= m_ ^ m2;
+    s[2 + i*4] ^= m_ ^ m3;
+    s[3 + i*4] ^= m_ ^ m4;
   }
 }
 
@@ -199,6 +217,7 @@ void aes_enc(uint8_t* c, uint8_t* message, uint8_t* k) {
   memcpy(s , message, 16);
   memcpy(rk,       k, 16);
 
+  mask_s(s);
   mask_rk(rk);
 
   // Initial round
@@ -207,6 +226,7 @@ void aes_enc(uint8_t* c, uint8_t* message, uint8_t* k) {
   for (int i = 1; i < Nr; i++) {
     aes_enc_rnd_sub(s);
     aes_enc_rnd_row(s);
+    remask(s);
     aes_enc_rnd_mix(s, r);
     aes_enc_exp_step(rk, rc[i - 1]);
     mask_rk(rk);
@@ -218,6 +238,8 @@ void aes_enc(uint8_t* c, uint8_t* message, uint8_t* k) {
   aes_enc_exp_step(rk, rc[9]);
   mask_rk(rk);
   aes_enc_rnd_key(s, rk);
+
+  mask_s(s);
 
   memcpy(c, s, 16);
 }
