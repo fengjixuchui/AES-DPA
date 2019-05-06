@@ -171,12 +171,21 @@ void calculate_mix_column_masks() {
   m4_ = m1_cube   ^ m2        ^ m3        ^ m4_square;
 }
 
-void mask_rk(uint8_t* rk) {
+void mask_rk(uint8_t* rk, uint8_t* masked_rk) {
   for (int i = 0; i < 4; i++) {
-    rk[0 + i*4] ^= m1_ ^ m;
-    rk[1 + i*4] ^= m2_ ^ m;
-    rk[2 + i*4] ^= m3_ ^ m;
-    rk[3 + i*4] ^= m4_ ^ m;
+    masked_rk[0 + i*4] = rk[0 + i*4] ^ m1_ ^ m;
+    masked_rk[1 + i*4] = rk[1 + i*4] ^ m2_ ^ m;
+    masked_rk[2 + i*4] = rk[2 + i*4] ^ m3_ ^ m;
+    masked_rk[3 + i*4] = rk[3 + i*4] ^ m4_ ^ m;
+  }
+}
+
+void mask_rk_final(uint8_t* rk, uint8_t* masked_rk) {
+  for (int i = 0; i < 4; i++) {
+    masked_rk[0 + i*4] = rk[0 + i*4] ^ m_;
+    masked_rk[1 + i*4] = rk[1 + i*4] ^ m_;
+    masked_rk[2 + i*4] = rk[2 + i*4] ^ m_;
+    masked_rk[3 + i*4] = rk[3 + i*4] ^ m_;
   }
 }
 
@@ -211,17 +220,16 @@ void aes_init() {
 }
 
 void aes_enc(uint8_t* c, uint8_t* message, uint8_t* k) {
-  aes_gf28_t rk[4 * Nb], s[4 * Nb];
-  aes_gf28_t r[4 * Nb];
+  aes_gf28_t rk[4 * Nb], s[4 * Nb], masked_rk[4 * Nb], r[4 * Nb];
 
   memcpy(s , message, 16);
   memcpy(rk,       k, 16);
 
   mask_s(s);
-  mask_rk(rk);
+  mask_rk(rk, masked_rk);
 
   // Initial round
-  aes_enc_rnd_key(s, rk);
+  aes_enc_rnd_key(s, masked_rk);
   // (Nr - 1) iterated rounds
   for (int i = 1; i < Nr; i++) {
     aes_enc_rnd_sub(s);
@@ -229,17 +237,15 @@ void aes_enc(uint8_t* c, uint8_t* message, uint8_t* k) {
     remask(s);
     aes_enc_rnd_mix(s, r);
     aes_enc_exp_step(rk, rc[i - 1]);
-    mask_rk(rk);
-    aes_enc_rnd_key(s, rk);
+    mask_rk(rk, masked_rk);
+    aes_enc_rnd_key(s, masked_rk);
   }
   // Final round
   aes_enc_rnd_sub(s);
   aes_enc_rnd_row(s);
   aes_enc_exp_step(rk, rc[9]);
-  mask_rk(rk);
-  aes_enc_rnd_key(s, rk);
-
-  mask_s(s);
+  mask_rk_final(rk, masked_rk);
+  aes_enc_rnd_key(s, masked_rk);
 
   memcpy(c, s, 16);
 }
