@@ -317,8 +317,6 @@ def attack( argv ) :
         # Find the index of the key hypothesis with the highest correlation.
         key.append(numpy.argmax(numpy.nanmax(R, axis=1)))
 
-    print(key)
-
     k = key
     m = M[0,:]
     c = C[0,:]
@@ -334,6 +332,8 @@ def attack( argv ) :
         print(key)
     else:
         print("Key recovery unsuccessfull.")
+    print("{0} traces used.".format(t))
+    print("Key recovered: {0}".format(str2octetstr( seq2str( k ) )))
 
 if ( __name__ == '__main__' ) :
     # parse command line arguments
