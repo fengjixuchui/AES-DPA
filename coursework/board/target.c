@@ -28,6 +28,7 @@ uint8_t sbox[256] = {
 
 uint8_t masked_sbox[256];
 uint8_t mask, m_, m1, m2, m3, m4, m1_, m2_, m3_, m4_;
+uint8_t rand_value;
 
 aes_gf28_t rc[16] = {0x01, 0x02, 0x04, 0x08, 0x10,
                      0x20, 0x40, 0x80, 0x1B, 0x36};
@@ -150,9 +151,24 @@ void aes_enc_rnd_key(aes_gf28_t* s, aes_gf28_t* rk) {
   }
 }
 
+// Shuffle an array into pseudo-random order. Found online at:
+// https://benpfaff.org/writings/clc/shuffle.html
+void shuffle(int *array, size_t n) {
+  if (n > 1) {
+    for (size_t i = 0; i < n - 1; i++) {
+      size_t j = i + rand_value / (RAND_MAX / (n - i) + 1);
+      int    t = array[j];
+      array[j] = array[i];
+      array[i] = t;
+    }
+  }
+}
+
 void aes_enc_rnd_sub(aes_gf28_t* s) {
+  int r[16] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
+  shuffle(r, 16);
   for (int i = 0; i < 16; i++) {
-    s[i] = masked_sbox[s[i]];
+    s[r[i]] = masked_sbox[s[r[i]]];
   }
 }
 
@@ -277,6 +293,8 @@ void aes_init(                               const uint8_t* k, const uint8_t* r 
   m2    = r[3];
   m3    = r[4];
   m4    = r[5];
+
+  rand_value = r[6];
 
   calculate_mix_column_masks();
   calculate_masked_sbox();

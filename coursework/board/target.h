@@ -18,7 +18,7 @@
 
 #define SIZEOF_BLK      (   16 )
 #define SIZEOF_KEY      (   16 )
-#define SIZEOF_RND      (    6 )
+#define SIZEOF_RND      (    7 )
 
 typedef uint8_t aes_gf28_t;
 
