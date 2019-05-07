@@ -19,4 +19,4 @@ attack-34576-ld :
 attack-34576-st :
 	@./34576.elf --traces-st ${TRACES}
 attack-custom :
-	@python attack2.py --mode="uart" --uart="/dev/scale-board" 
+	@python attack.py --mode="uart" --uart="/dev/scale-board" 

@@ -200,7 +200,7 @@ def client() :
 
     fd = board_open() ;
 
-    t = 200
+    t = 150
 
     s = DURATION / INTERVAL
 
@@ -265,6 +265,18 @@ def client() :
     print("Acquisition complete.")
 
     return t, samples, M, C, T
+
+def correlation_coefficient(A,B):
+    # Rowwise mean of input arrays & subtract from input arrays themeselves
+    A_mA = A - A.mean(1)[:,None]
+    B_mB = B - B.mean(1)[:,None]
+
+    # Sum of squares across rows
+    ssA = (A_mA**2).sum(1);
+    ssB = (B_mB**2).sum(1);
+
+    # Finally get corr coeff
+    return numpy.dot(A_mA,B_mB.T)/numpy.sqrt(numpy.dot(ssA[:,None],ssB[None]))
 
 def attack( argv ) :
     t, s, M, C, T = client()
