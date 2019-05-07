@@ -273,10 +273,12 @@ def client() :
 
         T[i] = B
 
+        # Section 3.2,  Page 25; Step 10: stop  acquisition
+        scope.stop()
+
     board_close( fd )
 
-    # Section 3.2,  Page 25; Step 10: stop  acquisition
-    scope.stop()
+    scope.close()
 
     print("Acquisition complete.")
 
