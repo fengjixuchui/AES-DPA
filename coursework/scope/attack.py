@@ -208,6 +208,17 @@ def client() :
     M = numpy.zeros((t, 16), dtype = numpy.uint8)
     C = numpy.zeros((t, 16), dtype = numpy.uint8)
 
+    # Section 3.39, Page 69; Step  2: configure channels
+    scope.setChannel( channel = 'A', enabled = True, coupling = 'DC', VRange =   5.0E-0 )
+    scope_range_chan_a =   5.0e-0
+    scope.setChannel( channel = 'B', enabled = True, coupling = 'DC', VRange = 500.0E-3 )
+    scope_range_chan_b = 500.0e-3
+
+    # Section 3.13, Page 36; Step  3: configure timebase
+    ( _, samples, samples_max ) = scope.setSamplingInterval( INTERVAL, DURATION )
+
+    time.sleep( 0.2 )
+
     print("Acquisition started...")
 
     for i in range(t):
@@ -220,15 +231,6 @@ def client() :
         m = seq2str( m )
         m = str2octetstr( m )
 
-        # Section 3.39, Page 69; Step  2: configure channels
-        scope.setChannel( channel = 'A', enabled = True, coupling = 'DC', VRange =   5.0E-0 )
-        scope_range_chan_a =   5.0e-0
-        scope.setChannel( channel = 'B', enabled = True, coupling = 'DC', VRange = 500.0E-3 )
-        scope_range_chan_b = 500.0e-3
-
-        # Section 3.13, Page 36; Step  3: configure timebase
-        ( _, samples, samples_max ) = scope.setSamplingInterval( INTERVAL, DURATION )
-
         # Section 3.56, Page 93; Step  4: configure trigger
         scope.setSimpleTrigger( 'A', threshold_V = 2.0E-0, direction = 'Rising', timeout_ms = 0 )
 
@@ -240,7 +242,7 @@ def client() :
         board_wrln( fd, "00:"   )
 
         # Section 3.26, Page 54; Step  6: wait for acquisition to complete
-        while ( not scope.isReady() ) : time.sleep( 1 )
+        while ( not scope.isReady() ) : time.sleep( 0.1 )
 
         c = board_rdln( fd )
 
@@ -255,12 +257,12 @@ def client() :
         # Section 3.18, Page 43; Step  8; transfer  buffers
         ( B, _, _ ) = scope.getDataRaw( channel = 'B', numSamples = samples, downSampleMode = PS2000A_RATIO_MODE_NONE )
 
-        # Section 3.2,  Page 25; Step 10: stop  acquisition
-        scope.stop()
-
         T[i] = B
 
     board_close( fd )
+
+    # Section 3.2,  Page 25; Step 10: stop  acquisition
+    scope.stop()
 
     print("Acquisition complete.")
 
@@ -285,7 +287,7 @@ def attack( argv ) :
 
     key = []
 
-    T = T[:, 0:9000]
+    T = T[:, 0:10000]
 
     for k in range(16):
         print("Attacking byte {0}...".format(k))
