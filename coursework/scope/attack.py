@@ -200,8 +200,10 @@ def client() :
 
     fd = board_open() ;
 
+    # Record 150 traces
     t = 150
 
+    # Number of samples is the duration divided by the interval between samples.
     s = DURATION / INTERVAL
 
     T = numpy.zeros((t,  s))
@@ -217,6 +219,7 @@ def client() :
     # Section 3.13, Page 36; Step  3: configure timebase
     ( _, samples, samples_max ) = scope.setSamplingInterval( INTERVAL, DURATION )
 
+    # Wait some time to prevent the board from hanging when reading.
     time.sleep( 0.2 )
 
     print("Acquisition started...")
@@ -226,6 +229,7 @@ def client() :
         original_m = m = []
         r = []
 
+        # Call the INSPECT command to get the number of random bytes to supply.
         board_wrln( fd, "01:00" )
         board_rdln( fd )
         board_rdln( fd )
@@ -233,6 +237,7 @@ def client() :
 
         random_size = str2seq( octetstr2str( random_size ) )
 
+        # Fill m and r with random numbers.
         for b in range(16) :
             m.append(random.randint(0,255))
 
@@ -255,11 +260,9 @@ def client() :
         # Section 3.26, Page 54; Step  6: wait for acquisition to complete
         while ( not scope.isReady() ) : time.sleep( 0.1 )
 
+        # Read back the ciphertext from the board.
         c = board_rdln( fd )
-
-        print(c)
-        c = octetstr2str( c )
-        c = str2seq( c )
+        c = str2seq( octetstr2str( c ) )
 
         M[i] = original_m
         C[i] = c

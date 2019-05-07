@@ -26,10 +26,14 @@ uint8_t sbox[256] = {
     0x8C, 0xA1, 0x89, 0x0D, 0xBF, 0xE6, 0x42, 0x68, 0x41, 0x99, 0x2D, 0x0F, 0xB0, 0x54, 0xBB, 0x16
  };
 
+// Masked sbox
 uint8_t masked_sbox[256];
+// Masks
 uint8_t mask, m_, m1, m2, m3, m4, m1_, m2_, m3_, m4_;
+// Random value used for shuffling
 uint8_t rand_value;
 
+// Round constant
 aes_gf28_t rc[16] = {0x01, 0x02, 0x04, 0x08, 0x10,
                      0x20, 0x40, 0x80, 0x1B, 0x36};
 
@@ -167,6 +171,7 @@ void shuffle(int *array, size_t n) {
 void aes_enc_rnd_sub(aes_gf28_t* s) {
   int r[16] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
   shuffle(r, 16);
+  // The Sbox operations are executed in random order.
   for (int i = 0; i < 16; i++) {
     s[r[i]] = masked_sbox[s[r[i]]];
   }
@@ -220,12 +225,14 @@ void aes_enc_exp_step(aes_gf28_t* rk, aes_gf28_t rc) {
   rk[15] = rk[11] ^ rk[15];
 }
 
+// Initialise the masked sbox with the correct values.
 void calculate_masked_sbox() {
   for (int i = 0; i < 256; i++) {
     masked_sbox[i ^ mask] = sbox[i] ^ m_;
   }
 }
 
+// Calculate m1_ to m4_ using m1 to m4.
 void calculate_mix_column_masks() {
   aes_gf28_t m1_square = xtime( m1 );
   aes_gf28_t m2_square = xtime( m2 );
@@ -241,6 +248,7 @@ void calculate_mix_column_masks() {
   m4_ = m1_cube   ^ m2        ^ m3        ^ m4_square;
 }
 
+// Mask the round key.
 void mask_rk(uint8_t* rk, uint8_t* masked_rk) {
   for (int i = 0; i < 4; i++) {
     masked_rk[0 + i*4] = rk[0 + i*4] ^ m1_ ^ mask;
@@ -250,6 +258,7 @@ void mask_rk(uint8_t* rk, uint8_t* masked_rk) {
   }
 }
 
+// Mask the round key in the final round.
 void mask_rk_final(uint8_t* rk, uint8_t* masked_rk) {
   for (int i = 0; i < 4; i++) {
     masked_rk[0 + i*4] = rk[0 + i*4] ^ m_;
@@ -259,6 +268,7 @@ void mask_rk_final(uint8_t* rk, uint8_t* masked_rk) {
   }
 }
 
+// Mask the state initially.
 void mask_s(uint8_t* s) {
   for (int i = 0; i < 4; i++) {
     s[0 + i*4] ^= m1_;
@@ -268,6 +278,7 @@ void mask_s(uint8_t* s) {
   }
 }
 
+// Remask the state during each round. Before MixColumns.
 void remask(uint8_t* s) {
   for (int i = 0; i < 4; i++) {
     s[0 + i*4] ^= m_ ^ m1;
@@ -385,6 +396,8 @@ int main( int argc, char* argv[] ) {
 
   uint8_t cmd[ 1 ], c[ SIZEOF_BLK ], m[ SIZEOF_BLK ], k[ SIZEOF_KEY ] = { 0xD4, 0x96, 0xE8, 0x8F, 0x21, 0x40, 0x55, 0x92, 0xED, 0x18, 0x62, 0xA9, 0x8C, 0x68, 0x35, 0xE6 }, r[ SIZEOF_RND ];
 
+  uint8_t k2[16] = { 0xCD, 0x97, 0x16, 0xE9, 0x5B, 0x42, 0xDD, 0x48, 0x69, 0x77, 0x2A, 0x34, 0x6A, 0x7F, 0x58, 0x13 };
+
   while( true ) {
     if( 1 != octetstr_rd( cmd, 1 ) ) {
       break;
@@ -409,10 +422,10 @@ int main( int argc, char* argv[] ) {
           break;
         }
 
-        aes_init(       k, r );
+        aes_init(       k2, r );
 
         scale_gpio_wr( SCALE_GPIO_PIN_TRG,  true );
-        aes     ( c, m, k, r );
+        aes     ( c, m, k2, r );
         scale_gpio_wr( SCALE_GPIO_PIN_TRG, false );
 
                           octetstr_wr( c, SIZEOF_BLK );
