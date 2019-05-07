@@ -285,6 +285,7 @@ def client() :
     return t, samples, M, C, T
 
 # Found online at https://stackoverflow.com/questions/30143417/computing-the-correlation-coefficient-between-two-multi-dimensional-arrays
+# Calculates the correlation coefficient between two 2D arrays and returns a 2D array.
 def correlation_coefficient(A,B):
     # Rowwise mean of input arrays & subtract from input arrays themeselves
     A_mA = A - A.mean(1)[:,None]
@@ -313,6 +314,7 @@ def attack( argv ) :
                 H[i,j] = hamming_weights[ sbox[M[i,k] ^ j] ]
 
         R = numpy.abs(correlation_coefficient(H.T, T.T))
+        # Find the index of the key hypothesis with the highest correlation.
         key.append(numpy.argmax(numpy.nanmax(R, axis=1)))
 
     print(key)
