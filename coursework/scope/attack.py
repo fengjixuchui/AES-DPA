@@ -224,12 +224,23 @@ def client() :
     for i in range(t):
 
         original_m = m = []
+        r = []
+
+        board_wrln( fd, "01:00" )
+        board_rdln( fd )
+        board_rdln( fd )
+        random_size = board_rdln( fd )
+
+        random_size = str2seq( octetstr2str( random_size ) )
 
         for b in range(16) :
             m.append(random.randint(0,255))
 
-        m = seq2str( m )
-        m = str2octetstr( m )
+        for id in range(random_size[0]) :
+            r.append(random.randint(0,255))
+
+        m = str2octetstr( seq2str( m ) )
+        r = str2octetstr( seq2str( r ) )
 
         # Section 3.56, Page 93; Step  4: configure trigger
         scope.setSimpleTrigger( 'A', threshold_V = 2.0E-0, direction = 'Rising', timeout_ms = 0 )
@@ -239,7 +250,7 @@ def client() :
 
         board_wrln( fd, "01:01" )
         board_wrln( fd,  m      )
-        board_wrln( fd, "00:"   )
+        board_wrln( fd,  r      )
 
         # Section 3.26, Page 54; Step  6: wait for acquisition to complete
         while ( not scope.isReady() ) : time.sleep( 0.1 )
