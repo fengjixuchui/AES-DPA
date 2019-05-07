@@ -396,8 +396,6 @@ int main( int argc, char* argv[] ) {
 
   uint8_t cmd[ 1 ], c[ SIZEOF_BLK ], m[ SIZEOF_BLK ], k[ SIZEOF_KEY ] = { 0xD4, 0x96, 0xE8, 0x8F, 0x21, 0x40, 0x55, 0x92, 0xED, 0x18, 0x62, 0xA9, 0x8C, 0x68, 0x35, 0xE6 }, r[ SIZEOF_RND ];
 
-  uint8_t k2[16] = { 0xCD, 0x97, 0x16, 0xE9, 0x5B, 0x42, 0xDD, 0x48, 0x69, 0x77, 0x2A, 0x34, 0x6A, 0x7F, 0x58, 0x13 };
-
   while( true ) {
     if( 1 != octetstr_rd( cmd, 1 ) ) {
       break;
@@ -422,10 +420,10 @@ int main( int argc, char* argv[] ) {
           break;
         }
 
-        aes_init(       k2, r );
+        aes_init(       k, r );
 
         scale_gpio_wr( SCALE_GPIO_PIN_TRG,  true );
-        aes     ( c, m, k2, r );
+        aes     ( c, m, k, r );
         scale_gpio_wr( SCALE_GPIO_PIN_TRG, false );
 
                           octetstr_wr( c, SIZEOF_BLK );

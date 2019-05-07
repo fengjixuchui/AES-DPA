@@ -284,6 +284,7 @@ def client() :
 
     return t, samples, M, C, T
 
+# Found online at https://stackoverflow.com/questions/30143417/computing-the-correlation-coefficient-between-two-multi-dimensional-arrays
 def correlation_coefficient(A,B):
     # Rowwise mean of input arrays & subtract from input arrays themeselves
     A_mA = A - A.mean(1)[:,None]
@@ -353,6 +354,7 @@ if ( __name__ == '__main__' ) :
     # Section 3.30, Page 58
     scope_adc_max = scope.getMaxValue()
 
+    # Run the attack
     tic = timeit.default_timer()
     attack( sys.argv )
     toc = timeit.default_timer()
