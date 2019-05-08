@@ -13,3 +13,6 @@ coursework/board/target.hex
 coursework/scope/traces.dat
 coursework/scope/.ipynb_checkpoints/
 coursework/board/target
+coursework/scope/dan-traces.dat
+coursework/scope/my-traces.dat
+coursework/scope/mask-traces.dat
