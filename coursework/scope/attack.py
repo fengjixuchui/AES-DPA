@@ -328,9 +328,9 @@ def attack( argv ) :
     test = AES.new(k).encrypt(m)
 
     if (test == c):
-        print("Key seccessfully recovered.")
+        print("Key successfully recovered.")
     else:
-        print("Key recovery unsuccessfull.")
+        print("Key recovery unsuccessful.")
     print("{0} traces used.".format(t))
     print("Key recovered: {0}".format(str2octetstr( seq2str( key ) )))
 
