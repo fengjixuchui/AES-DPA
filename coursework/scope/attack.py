@@ -333,7 +333,7 @@ def attack( argv ) :
     else:
         print("Key recovery unsuccessfull.")
     print("{0} traces used.".format(t))
-    print("Key recovered: {0}".format(str2octetstr( seq2str( k ) )))
+    print("Key recovered: {0}".format(str2octetstr( seq2str( key ) )))
 
 if ( __name__ == '__main__' ) :
     # parse command line arguments
