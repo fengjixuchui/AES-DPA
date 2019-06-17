@@ -17,7 +17,7 @@ encryption. Using the hamming weight bus leakage...
 Compile and run the AES implementation
 
 ```
-gcc -std=c99 -Wall -O3 aes.c -o aes
+make aes
 ./aes "hello"
 ```
 
@@ -26,7 +26,7 @@ gcc -std=c99 -Wall -O3 aes.c -o aes
 Compile and run the AES implementation as before
 
 ```
-gcc -std=c99 -Wall -O3 aes-masking.c -o aes-masking
+make aes-masking
 ./aes-masking "hello"
 ```
 
@@ -35,7 +35,7 @@ gcc -std=c99 -Wall -O3 aes-masking.c -o aes-masking
 Run the DPA implementation providing it with a trace file to attack
 
 ```
-python attack.py traces.dat
+make dpa
 ```
 
 A sample trace file is provided at ...
