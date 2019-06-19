@@ -1,7 +1,19 @@
-import argparse, binascii, select, serial, socket, sys
-import time, timeit, numpy, random, struct
-import picoscope.ps2000a as ps2000a
+import argparse
+import binascii
+import random
+import select
+import socket
+import struct
+import sys
+import time
+import timeit
+
 import Crypto.Cipher.AES as AES
+import numpy
+
+import picoscope.ps2000a as ps2000a
+import serial
+
 numpy.seterr(divide='ignore', invalid='ignore')
 
 PS2000A_RATIO_MODE_NONE = 0 # Section 3.18.1
@@ -136,7 +148,7 @@ def board_open() :
     if   ( args.mode == 'uart'   ) :
         fd = serial.Serial( port = args.uart, baudrate = 9600, bytesize = serial.EIGHTBITS, parity = serial.PARITY_NONE, stopbits = serial.STOPBITS_ONE, timeout = None )
     elif ( args.mode == 'socket' ) :
-        fd = socket.socket( socket.AF_INET, socket.SOCK_STREAM ) ; fd.connect( ( args.host, args.port ) ) ; fd = fd.makefile( mode = 'rwb', bufsize = 1024 )
+        fd = socket.socket( socket.AF_INET, socket.SOCK_STREAM ) ; fd.connect( ( args.host, args.port ) ) ; fd = fd.makefile( mode = 'rwb' )
 
     return fd
 
@@ -198,7 +210,7 @@ def str2octetstr( x ) :
 
 def client() :
 
-    fd = board_open() ;
+    fd = board_open()
 
     # Record 150 traces
     t = 150
@@ -212,12 +224,10 @@ def client() :
 
     # Section 3.39, Page 69; Step  2: configure channels
     scope.setChannel( channel = 'A', enabled = True, coupling = 'DC', VRange =   5.0E-0 )
-    scope_range_chan_a =   5.0e-0
     scope.setChannel( channel = 'B', enabled = True, coupling = 'DC', VRange = 500.0E-3 )
-    scope_range_chan_b = 500.0e-3
 
     # Section 3.13, Page 36; Step  3: configure timebase
-    ( _, samples, samples_max ) = scope.setSamplingInterval( INTERVAL, DURATION )
+    ( _, samples, _ ) = scope.setSamplingInterval( INTERVAL, DURATION )
 
     # Wait some time to prevent the board from hanging when reading.
     time.sleep( 0.2 )
@@ -238,10 +248,10 @@ def client() :
         random_size = str2seq( octetstr2str( random_size ) )
 
         # Fill m and r with random numbers.
-        for b in range(16) :
+        for _ in range(16) :
             m.append(random.randint(0,255))
 
-        for id in range(random_size[0]) :
+        for _ in range(random_size[0]) :
             r.append(random.randint(0,255))
 
         m = str2octetstr( seq2str( m ) )
@@ -292,14 +302,14 @@ def correlation_coefficient(A,B):
     B_mB = B - B.mean(1)[:,None]
 
     # Sum of squares across rows
-    ssA = (A_mA**2).sum(1);
-    ssB = (B_mB**2).sum(1);
+    ssA = (A_mA**2).sum(1)
+    ssB = (B_mB**2).sum(1)
 
     # Finally get corr coeff
     return numpy.dot(A_mA,B_mB.T)/numpy.sqrt(numpy.dot(ssA[:,None],ssB[None]))
 
 def attack( argv ) :
-    t, s, M, C, T = client()
+    t, _, M, C, T = client()
 
     H = numpy.zeros((t, 256), dtype = numpy.uint8) # Hypothetical power consumption values
 

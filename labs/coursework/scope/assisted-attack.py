@@ -1,7 +1,10 @@
-import numpy, struct, sys
-import matplotlib.pyplot as plt
-import struct, Crypto.Cipher.AES as AES
+import struct
+import sys
 import timeit
+
+import Crypto.Cipher.AES as AES
+import numpy
+
 numpy.seterr(divide='ignore', invalid='ignore')
 
 ## Load  a trace data set from an on-disk file.
@@ -41,38 +44,6 @@ def traces_ld( f ) :
     fd.close()
 
     return t, s, M, C, T
-
-## Store a trace data set into an on-disk file.
-##
-## \param[in] f the filename to store trace data set into
-## \param[in] t the number of traces
-## \param[in] s the number of samples in each trace
-## \param[in] M a t-by-16 matrix of AES-128  plaintexts
-## \param[in] C a t-by-16 matrix of AES-128 ciphertexts
-## \param[in] T a t-by-s  matrix of samples, i.e., the traces
-
-def traces_st( f, t, s, M, C, T ) :
-    fd = open( f, "wb" )
-
-    def wr( x, y ) :
-        fd.write( struct.pack( x, y ) )
-
-    wr( '<I', t,  )
-    wr( '<I', s,  )
-
-    for i in range( t ) :
-        for j in range( 16 ) :
-            wr( '<B', M[ i, j ] )
-
-    for i in range( t ) :
-        for j in range( 16 ) :
-            wr( '<B', C[ i, j ] )
-
-    for i in range( t ) :
-        for j in range( s  ) :
-            wr( '<h', T[ i, j ] )
-
-    fd.close()
 
 sbox = [0x63, 0x7C, 0x77, 0x7B, 0xF2, 0x6B, 0x6F, 0xC5, 0x30, 0x01, 0x67, 0x2B, 0xFE, 0xD7, 0xAB, 0x76,
         0xCA, 0x82, 0xC9, 0x7D, 0xFA, 0x59, 0x47, 0xF0, 0xAD, 0xD4, 0xA2, 0xAF, 0x9C, 0xA4, 0x72, 0xC0,
@@ -116,15 +87,15 @@ def correlation_coefficient(A,B):
     B_mB = B - B.mean(1)[:,None]
 
     # Sum of squares across rows
-    ssA = (A_mA**2).sum(1);
-    ssB = (B_mB**2).sum(1);
+    ssA = (A_mA**2).sum(1)
+    ssB = (B_mB**2).sum(1)
 
     # Finally get corr coeff
     return numpy.dot(A_mA,B_mB.T)/numpy.sqrt(numpy.dot(ssA[:,None],ssB[None]))
 
 def attack( argv ) :
     print("Loading traces...")
-    t, s, M, C, T = traces_ld( argv[1] )
+    t, _, M, C, T = traces_ld( argv[1] )
     print("Traces loaded.")
 
     t = 150 # Only using 150 traces
@@ -157,10 +128,10 @@ def attack( argv ) :
     test = AES.new(k).encrypt(m)
 
     if (test == c):
-        print("Key seccessfully recovered:")
+        print("Key successfully recovered:")
         print(key)
     else:
-        print("Key recovery unsuccessfull.")
+        print("Key recovery unsuccessful.")
 
 if ( __name__ == '__main__' ) :
 

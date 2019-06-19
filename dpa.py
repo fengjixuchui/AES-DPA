@@ -1,32 +1,37 @@
-import numpy, struct, sys
-import struct, Crypto.Cipher.AES as AES
+import struct
+import sys
 import timeit
+
+import Crypto.Cipher.AES as AES
+import numpy
+
 numpy.seterr(divide='ignore', invalid='ignore')
 
-def traces_ld( f ) :
-    fd = open( f, "rb" )
+def traces_ld(f):
+    fd = open(f, "rb")
 
-    def rd( x ) :
-        ( r, ) = struct.unpack( x, fd.read( struct.calcsize( x ) ) ) ; return r
+    def rd(x):
+        (r, ) = struct.unpack(x, fd.read(struct.calcsize(x)))
+        return r
 
-    t = rd( '<I' )
-    s = rd( '<I' )
+    t = rd('<I')
+    s = rd('<I')
 
-    M = numpy.zeros( ( t, 16 ), dtype = numpy.uint8 )
-    C = numpy.zeros( ( t, 16 ), dtype = numpy.uint8 )
-    T = numpy.zeros( ( t,  s ), dtype = numpy.int16 )
+    M = numpy.zeros((t, 16), dtype=numpy.uint8)
+    C = numpy.zeros((t, 16), dtype=numpy.uint8)
+    T = numpy.zeros((t,  s), dtype=numpy.int16)
 
-    for i in range( t ) :
-        for j in range( 16 ) :
-            M[ i, j ] = rd( '<B' )
+    for i in range(t):
+        for j in range(16):
+            M[i, j] = rd('<B')
 
-    for i in range( t ) :
-        for j in range( 16 ) :
-            C[ i, j ] = rd( '<B' )
+    for i in range(t):
+        for j in range(16):
+            C[i, j] = rd('<B')
 
-    for i in range( t ) :
-        for j in range( s  ) :
-            T[ i, j ] = rd( '<h' )
+    for i in range(t):
+        for j in range(s):
+            T[i, j] = rd('<h')
 
     fd.close()
 
@@ -66,43 +71,44 @@ hamming_weights = [0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4,
                    3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7,
                    4, 5, 5, 6, 5, 6, 6, 7, 5, 6, 6, 7, 6, 7, 7, 8]
 
-def correlation_coefficient(A,B):
+def correlation_coefficient(A, B):
     # Rowwise mean of input arrays & subtract from input arrays themeselves
-    A_mA = A - A.mean(1)[:,None]
-    B_mB = B - B.mean(1)[:,None]
+    A_mA = A - A.mean(1)[:, None]
+    B_mB = B - B.mean(1)[:, None]
 
     # Sum of squares across rows
     ssA = (A_mA**2).sum(1)
     ssB = (B_mB**2).sum(1)
 
     # Finally get corr coeff
-    return numpy.dot(A_mA,B_mB.T)/numpy.sqrt(numpy.dot(ssA[:,None],ssB[None]))
+    return numpy.dot(A_mA, B_mB.T)/numpy.sqrt(numpy.dot(ssA[:, None], ssB[None]))
 
-def attack( argv ) :
+def attack(argv):
     print("Loading traces...")
-    t, _, M, C, T = traces_ld( argv[1] )
+    t, _, M, C, T = traces_ld(argv[1])
     print("Traces loaded.")
 
-    t = 150 # Only using 150 traces
+    t = 150  # Only using 150 traces
 
-    H = numpy.zeros((t, 256), dtype = numpy.uint8) # Hypothetical power consumption values
+    # Hypothetical power consumption values
+    H = numpy.zeros((t, 256), dtype=numpy.uint8)
 
     key = []
 
-    T = T[0:t, 0:9000]
+    T = T[0:t, :]
 
     for k in range(16):
         print("Attacking byte {0}...".format(k))
         for i in range(t):
             for j in range(256):
-                H[i,j] = hamming_weights[ sbox[M[i,k] ^ j] ]
+                H[i, j] = hamming_weights[sbox[M[i, k] ^ j]]
 
         R = numpy.abs(correlation_coefficient(H.T, T.T))
         key.append(numpy.argmax(numpy.nanmax(R, axis=1)))
 
     k = key
-    m = M[0,:]
-    c = C[0,:]
+    m = M[0, :]
+    c = C[0, :]
 
     k = struct.pack(16 * 'B', *k)
     m = struct.pack(16 * 'B', *m)
@@ -116,11 +122,11 @@ def attack( argv ) :
     else:
         print("Key recovery unsuccessful.")
 
-if ( __name__ == '__main__' ) :
-    if ( len(sys.argv) != 2):
+if (__name__ == '__main__'):
+    if (len(sys.argv) != 2):
         print("Usage: python attack.py filename")
     else:
         tic = timeit.default_timer()
-        attack( sys.argv )
+        attack(sys.argv)
         toc = timeit.default_timer()
         print("Attack took {:.2f} seconds in total.".format(toc-tic))
