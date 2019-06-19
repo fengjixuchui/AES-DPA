@@ -1,5 +1,4 @@
 import numpy, struct, sys
-import matplotlib.pyplot as plt
 import struct, Crypto.Cipher.AES as AES
 import timeit
 numpy.seterr(divide='ignore', invalid='ignore')
@@ -73,15 +72,15 @@ def correlation_coefficient(A,B):
     B_mB = B - B.mean(1)[:,None]
 
     # Sum of squares across rows
-    ssA = (A_mA**2).sum(1);
-    ssB = (B_mB**2).sum(1);
+    ssA = (A_mA**2).sum(1)
+    ssB = (B_mB**2).sum(1)
 
     # Finally get corr coeff
     return numpy.dot(A_mA,B_mB.T)/numpy.sqrt(numpy.dot(ssA[:,None],ssB[None]))
 
 def attack( argv ) :
     print("Loading traces...")
-    t, s, M, C, T = traces_ld( argv[1] )
+    t, _, M, C, T = traces_ld( argv[1] )
     print("Traces loaded.")
 
     t = 150 # Only using 150 traces

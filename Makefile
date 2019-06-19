@@ -5,7 +5,7 @@ aes-mask:
 	gcc -std=c99 -Wall -O3 aes-masking.c -o aes-masking
 
 dpa:
-	python attack.py traces-one.dat
+	python dpa.py traces-one.dat
 
 clean:
 	rm aes aes-masking

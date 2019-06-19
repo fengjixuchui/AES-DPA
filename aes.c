@@ -5,7 +5,7 @@
  * LICENSE.txt within the associated archive or repository).
  */
 
-#include "encrypt.h"
+#include "aes.h"
 
 #define AES_ENC_RND_MIX_STEP(a, b, c, d) { \
   aes_gf28_t __a1 = s[ a ];                \
@@ -26,59 +26,23 @@
   s[ d ] = __a3 ^ __b1 ^ __c1 ^ __d2;      \
 }
 
-#define AES_ENC_RND_INIT() { \
-  t_0 = rkp[0] ^ t_0;        \
-  t_1 = rkp[1] ^ t_1;        \
-  t_2 = rkp[1] ^ t_2;        \
-  t_3 = rkp[1] ^ t_3;        \
-  rkp += Nb;                 \
-}
-
-#define AES_ENC_RND_ITER() {                                    \
-  t_4 = rkp[ 0 ] ^ ( AES_ENC_TBOX_0[ ( t_0 >>  0 ) & 0xFF ] ) ^ \
-                   ( AES_ENC_TBOX_1[ ( t_1 >>  8 ) & 0xFF ] ) ^ \
-                   ( AES_ENC_TBOX_2[ ( t_2 >> 16 ) & 0xFF ] ) ^ \
-                   ( AES_ENC_TBOX_3[ ( t_3 >> 24 ) & 0xFF ] ) ; \
-  t_5 = rkp[ 1 ] ^ ( AES_ENC_TBOX_0[ ( t_1 >>  0 ) & 0xFF ] ) ^ \
-                   ( AES_ENC_TBOX_1[ ( t_2 >>  8 ) & 0xFF ] ) ^ \
-                   ( AES_ENC_TBOX_2[ ( t_3 >> 16 ) & 0xFF ] ) ^ \
-                   ( AES_ENC_TBOX_3[ ( t_0 >> 24 ) & 0xFF ] ) ; \
-  t_6 = rkp[ 2 ] ^ ( AES_ENC_TBOX_0[ ( t_2 >>  0 ) & 0xFF ] ) ^ \
-                   ( AES_ENC_TBOX_1[ ( t_3 >>  8 ) & 0xFF ] ) ^ \
-                   ( AES_ENC_TBOX_2[ ( t_0 >> 16 ) & 0xFF ] ) ^ \
-                   ( AES_ENC_TBOX_3[ ( t_1 >> 24 ) & 0xFF ] ) ; \
-  t_7 = rkp[ 3 ] ^ ( AES_ENC_TBOX_0[ ( t_3 >>  0 ) & 0xFF ] ) ^ \
-                   ( AES_ENC_TBOX_1[ ( t_0 >>  8 ) & 0xFF ] ) ^ \
-                   ( AES_ENC_TBOX_2[ ( t_1 >> 16 ) & 0xFF ] ) ^ \
-                   ( AES_ENC_TBOX_3[ ( t_2 >> 24 ) & 0xFF ] ) ; \
-  rkp += Nb; t_0 = t_4; t_1 = t_5; t_2 = t_6; t_3 = t_7;        \
-}
-
-#define AES_ENC_RND_FINI() {                                                 \
-  t_4 = rkp[ 0 ] ^ ( AES_ENC_TBOX_4[ ( t_0 >>  0 ) & 0xFF ] & 0x000000FF ) ^ \
-                   ( AES_ENC_TBOX_4[ ( t_1 >>  8 ) & 0xFF ] & 0x0000FF00 ) ^ \
-                   ( AES_ENC_TBOX_4[ ( t_2 >> 16 ) & 0xFF ] & 0x00FF0000 ) ^ \
-                   ( AES_ENC_TBOX_4[ ( t_3 >> 24 ) & 0xFF ] & 0xFF000000 ) ; \
-  t_5 = rkp[ 1 ] ^ ( AES_ENC_TBOX_4[ ( t_1 >>  0 ) & 0xFF ] & 0x000000FF ) ^ \
-                   ( AES_ENC_TBOX_4[ ( t_2 >>  8 ) & 0xFF ] & 0x0000FF00 ) ^ \
-                   ( AES_ENC_TBOX_4[ ( t_3 >> 16 ) & 0xFF ] & 0x00FF0000 ) ^ \
-                   ( AES_ENC_TBOX_4[ ( t_0 >> 24 ) & 0xFF ] & 0xFF000000 ) ; \
-  t_6 = rkp[ 2 ] ^ ( AES_ENC_TBOX_4[ ( t_2 >>  0 ) & 0xFF ] & 0x000000FF ) ^ \
-                   ( AES_ENC_TBOX_4[ ( t_3 >>  8 ) & 0xFF ] & 0x0000FF00 ) ^ \
-                   ( AES_ENC_TBOX_4[ ( t_0 >> 16 ) & 0xFF ] & 0x00FF0000 ) ^ \
-                   ( AES_ENC_TBOX_4[ ( t_1 >> 24 ) & 0xFF ] & 0xFF000000 ) ; \
-  t_7 = rkp[ 3 ] ^ ( AES_ENC_TBOX_4[ ( t_3 >>  0 ) & 0xFF ] & 0x000000FF ) ^ \
-                   ( AES_ENC_TBOX_4[ ( t_0 >>  8 ) & 0xFF ] & 0x0000FF00 ) ^ \
-                   ( AES_ENC_TBOX_4[ ( t_1 >> 16 ) & 0xFF ] & 0x00FF0000 ) ^ \
-                   ( AES_ENC_TBOX_4[ ( t_2 >> 24 ) & 0xFF ] & 0xFF000000 ) ; \
-  rkp += Nb; t_0 = t_4; t_1 = t_5; t_2 = t_6; t_3 = t_7;                     \
-}
-
-aes_gf28_col_t AES_ENC_TBOX_0[256];
-aes_gf28_col_t AES_ENC_TBOX_1[256];
-aes_gf28_col_t AES_ENC_TBOX_2[256];
-aes_gf28_col_t AES_ENC_TBOX_3[256];
-aes_gf28_col_t AES_ENC_TBOX_4[256];
+uint8_t sbox[256] = {
+    0x63, 0x7C, 0x77, 0x7B, 0xF2, 0x6B, 0x6F, 0xC5, 0x30, 0x01, 0x67, 0x2B, 0xFE, 0xD7, 0xAB, 0x76,
+    0xCA, 0x82, 0xC9, 0x7D, 0xFA, 0x59, 0x47, 0xF0, 0xAD, 0xD4, 0xA2, 0xAF, 0x9C, 0xA4, 0x72, 0xC0,
+    0xB7, 0xFD, 0x93, 0x26, 0x36, 0x3F, 0xF7, 0xCC, 0x34, 0xA5, 0xE5, 0xF1, 0x71, 0xD8, 0x31, 0x15,
+    0x04, 0xC7, 0x23, 0xC3, 0x18, 0x96, 0x05, 0x9A, 0x07, 0x12, 0x80, 0xE2, 0xEB, 0x27, 0xB2, 0x75,
+    0x09, 0x83, 0x2C, 0x1A, 0x1B, 0x6E, 0x5A, 0xA0, 0x52, 0x3B, 0xD6, 0xB3, 0x29, 0xE3, 0x2F, 0x84,
+    0x53, 0xD1, 0x00, 0xED, 0x20, 0xFC, 0xB1, 0x5B, 0x6A, 0xCB, 0xBE, 0x39, 0x4A, 0x4C, 0x58, 0xCF,
+    0xD0, 0xEF, 0xAA, 0xFB, 0x43, 0x4D, 0x33, 0x85, 0x45, 0xF9, 0x02, 0x7F, 0x50, 0x3C, 0x9F, 0xA8,
+    0x51, 0xA3, 0x40, 0x8F, 0x92, 0x9D, 0x38, 0xF5, 0xBC, 0xB6, 0xDA, 0x21, 0x10, 0xFF, 0xF3, 0xD2,
+    0xCD, 0x0C, 0x13, 0xEC, 0x5F, 0x97, 0x44, 0x17, 0xC4, 0xA7, 0x7E, 0x3D, 0x64, 0x5D, 0x19, 0x73,
+    0x60, 0x81, 0x4F, 0xDC, 0x22, 0x2A, 0x90, 0x88, 0x46, 0xEE, 0xB8, 0x14, 0xDE, 0x5E, 0x0B, 0xDB,
+    0xE0, 0x32, 0x3A, 0x0A, 0x49, 0x06, 0x24, 0x5C, 0xC2, 0xD3, 0xAC, 0x62, 0x91, 0x95, 0xE4, 0x79,
+    0xE7, 0xC8, 0x37, 0x6D, 0x8D, 0xD5, 0x4E, 0xA9, 0x6C, 0x56, 0xF4, 0xEA, 0x65, 0x7A, 0xAE, 0x08,
+    0xBA, 0x78, 0x25, 0x2E, 0x1C, 0xA6, 0xB4, 0xC6, 0xE8, 0xDD, 0x74, 0x1F, 0x4B, 0xBD, 0x8B, 0x8A,
+    0x70, 0x3E, 0xB5, 0x66, 0x48, 0x03, 0xF6, 0x0E, 0x61, 0x35, 0x57, 0xB9, 0x86, 0xC1, 0x1D, 0x9E,
+    0xE1, 0xF8, 0x98, 0x11, 0x69, 0xD9, 0x8E, 0x94, 0x9B, 0x1E, 0x87, 0xE9, 0xCE, 0x55, 0x28, 0xDF,
+    0x8C, 0xA1, 0x89, 0x0D, 0xBF, 0xE6, 0x42, 0x68, 0x41, 0x99, 0x2D, 0x0F, 0xB0, 0x54, 0xBB, 0x16};
 
 aes_gf28_t rc[16] = {0x01, 0x02, 0x04, 0x08, 0x10,
                      0x20, 0x40, 0x80, 0x1B, 0x36};
@@ -86,16 +50,6 @@ aes_gf28_t rc[16] = {0x01, 0x02, 0x04, 0x08, 0x10,
 uint8_t Nb = 4, Nr = 10;
 
 int main(int argc, char* argv[]) {
-
-  // uint8_t k[16] = {0x2B, 0x7E, 0x15, 0x16, 0x28, 0xAE, 0xD2, 0xA6,
-  //                  0xAB, 0xF7, 0x15, 0x88, 0x09, 0xCF, 0x4F, 0x3C};
-  //
-  // uint8_t m[16] = {0x32, 0x43, 0xF6, 0xA8, 0x88, 0x5A, 0x30, 0x8D,
-  //                  0x31, 0x31, 0x98, 0xA2, 0xE0, 0x37, 0x07, 0x34};
-  //
-  // uint8_t c[16] = {0x39, 0x25, 0x84, 0x1D, 0x02, 0xDC, 0x09, 0xFB,
-  //                  0xDC, 0x11, 0x85, 0x97, 0x19, 0x6A, 0x0B, 0x32};
-
   uint8_t k[16] = {212, 150, 232, 143, 33, 64, 85, 146, 237, 24, 98, 169, 140, 104, 53, 230};
 
   uint8_t m[16] = {122, 9, 176, 178, 88, 101, 117, 187, 169, 52, 99, 119, 134, 137, 208, 108};
@@ -112,13 +66,6 @@ int main(int argc, char* argv[]) {
     printf("AES.Enc( k, m ) != c\n");
   }
 
-}
-
-void print_values(aes_gf28_t* array, int size) {
-  for (int i = 0; i < size; i++) {
-    printf("%02X ", array[i]);
-  }
-  printf("\n");
 }
 
 aes_gf28_t xtime(aes_gf28_t a) {
@@ -157,28 +104,11 @@ aes_gf28_t aes_gf28_inv(aes_gf28_t a) {
   return t_0;
 }
 
-aes_gf28_t sbox(aes_gf28_t a) {
-  a = aes_gf28_inv(a);
-
-  a = ( 0x63   ) ^
-      ( a      ) ^
-      ( a << 1 ) ^
-      ( a << 2 ) ^
-      ( a << 3 ) ^
-      ( a << 4 ) ^
-      ( a >> 7 ) ^
-      ( a >> 6 ) ^
-      ( a >> 5 ) ^
-      ( a >> 4 );
-
-      return a;
-}
-
 void aes_enc_exp_step(aes_gf28_t* rk, aes_gf28_t rc) {
-  rk[0]  = rc ^ sbox(rk[13]) ^ rk[0];
-  rk[1]  =      sbox(rk[14]) ^ rk[1];
-  rk[2]  =      sbox(rk[15]) ^ rk[2];
-  rk[3]  =      sbox(rk[12]) ^ rk[3];
+  rk[0]  = rc ^ sbox[rk[13]] ^ rk[0];
+  rk[1]  =      sbox[rk[14]] ^ rk[1];
+  rk[2]  =      sbox[rk[15]] ^ rk[2];
+  rk[3]  =      sbox[rk[12]] ^ rk[3];
 
   rk[4]  = rk[0]  ^ rk[4];
   rk[5]  = rk[1]  ^ rk[5];
@@ -204,7 +134,7 @@ void aes_enc_rnd_key(aes_gf28_t* s, aes_gf28_t* rk) {
 
 void aes_enc_rnd_sub(aes_gf28_t* s) {
   for (int i = 0; i < 16; i++) {
-    s[i] = sbox(s[i]);
+    s[i] = sbox[s[i]];
   }
 }
 
@@ -234,54 +164,6 @@ void aes_enc_rnd_mix(aes_gf28_t* s) {
   }
 }
 
-// void aes_enc_keyexp(uint8_t* r, const uint8_t* k) {
-//   uint8_t Nk = 11;
-//   aes_gf28_col_t* rp = (aes_gf28_col_t*) (r);
-//
-//   memcpy(rp[0], k     , 4);
-//   memcpy(rp[1], k + 4 , 4);
-//   memcpy(rp[2], k + 8 , 4);
-//   memcpy(rp[3], k + 12, 4);
-//
-//   for (int i = Nk; i < (Nb * (Nr + 1)); i++) {
-//     aes_gf28_col_t t_0 = rp[i - 1];
-//     aes_gf28_col_t t_1 = rp[i - Nb];
-//
-//     if ((i % Nk) == 0) {
-//       t_0 = rc[i/Nk] ^ (AES_ENC_TBOX_4[ (t_0 >>  8) & 0xFF ] & 0x000000FF) ^
-//                        (AES_ENC_TBOX_4[ (t_0 >> 16) & 0xFF ] & 0x0000FF00) ^
-//                        (AES_ENC_TBOX_4[ (t_0 >> 24) & 0xFF ] & 0x00FF0000) ^
-//                        (AES_ENC_TBOX_4[ (t_0 >>  0) & 0xFF ] & 0xFF000000) ;
-//     }
-//
-//     rp[i] = t_0 ^ t_1;
-//   }
-// }
-
-void compute_tables() {
-  for (aes_gf28_t a = 0; a < 256; a++) {
-    AES_ENC_TBOX_0[a] = (((0x02 ^ sbox(a)) & 0xFF) >>  0) ^
-                        (((0x01 ^ sbox(a)) & 0xFF) >>  8) ^
-                        (((0x01 ^ sbox(a)) & 0xFF) >> 16) ^
-                        (((0x03 ^ sbox(a)) & 0xFF) >> 24) ;
-
-    AES_ENC_TBOX_1[a] = (((0x03 ^ sbox(a)) & 0xFF) >>  0) ^
-                        (((0x02 ^ sbox(a)) & 0xFF) >>  8) ^
-                        (((0x01 ^ sbox(a)) & 0xFF) >> 16) ^
-                        (((0x01 ^ sbox(a)) & 0xFF) >> 24) ;
-
-    AES_ENC_TBOX_2[a] = (((0x01 ^ sbox(a)) & 0xFF) >>  0) ^
-                        (((0x03 ^ sbox(a)) & 0xFF) >>  8) ^
-                        (((0x02 ^ sbox(a)) & 0xFF) >> 16) ^
-                        (((0x01 ^ sbox(a)) & 0xFF) >> 24) ;
-
-    AES_ENC_TBOX_3[a] = (((0x01 ^ sbox(a)) & 0xFF) >>  0) ^
-                        (((0x01 ^ sbox(a)) & 0xFF) >>  8) ^
-                        (((0x03 ^ sbox(a)) & 0xFF) >> 16) ^
-                        (((0x02 ^ sbox(a)) & 0xFF) >> 24) ;
-  }
-}
-
 void aes_enc(uint8_t* c, uint8_t* m, uint8_t* k) {
   aes_gf28_t rk[4 * Nb], s[4 * Nb];
 
@@ -306,31 +188,3 @@ void aes_enc(uint8_t* c, uint8_t* m, uint8_t* k) {
 
   memcpy(c, s, 16);
 }
-
-// void aes_enc_table(uint8_t* r, const uint8_t* m, const uint8_t* k) {
-//   compute_tables();
-//   aes_gf28_col_t* rkp = (aes_gf28_col_t*) (k);
-//   aes_enc_keyexp(rkp, k);
-//
-//   aes_gf28_col_t t_0 = 0, t_1 = 0, t_2 = 0, t_3 = 0,
-//                  t_4 = 0, t_5 = 0, t_6 = 0, t_7 = 0;
-//
-//   memcpy(t_0, m     , 4);
-//   memcpy(t_1, m + 4 , 4);
-//   memcpy(t_2, m + 8 , 4);
-//   memcpy(t_3, m + 12, 4);
-//
-//   // Initial   round
-//   AES_ENC_RND_INIT();
-//   // (Nr - 1) iterated rounds
-//   for (int i = 1; i < Nr; i++) {
-//     AES_ENC_RND_ITER();
-//   }
-//   // Final round
-//   AES_ENC_RND_FINI();
-//
-//   memcpy(r     , t_0, 4);
-//   memcpy(r + 4 , t_1, 4);
-//   memcpy(r + 8 , t_2, 4);
-//   memcpy(r + 12, t_3, 4);
-// }
