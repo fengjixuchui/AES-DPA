@@ -12,4 +12,4 @@ dpa:
 
 .PHONY: clean
 clean:
-	rm aes aes-mask
+	rm -f aes aes-mask
