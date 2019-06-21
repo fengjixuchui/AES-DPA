@@ -19,6 +19,7 @@ typedef uint8_t aes_gf28_t;
 typedef uint32_t aes_gf28_row_t;
 typedef uint32_t aes_gf28_col_t;
 
+void print_values(char* name, uint8_t *m, int length);
 aes_gf28_t xtime(aes_gf28_t a);
 aes_gf28_t aes_gf28_mul(aes_gf28_t a, aes_gf28_t b);
 aes_gf28_t aes_gf28_inv(aes_gf28_t a);

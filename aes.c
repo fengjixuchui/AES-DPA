@@ -50,22 +50,39 @@ aes_gf28_t rc[16] = {0x01, 0x02, 0x04, 0x08, 0x10,
 uint8_t Nb = 4, Nr = 10;
 
 int main(int argc, char* argv[]) {
+
+  if (argc != 2) {
+    printf("Correct usage: ./aes <message>\n");
+    exit(EXIT_FAILURE);
+  }
+
+  if (strlen(argv[1]) > 16) {
+    printf("Message must be 16 characters or less\n");
+    exit(EXIT_FAILURE);
+  }
+
+  uint8_t m[16] = {0};
   uint8_t k[16] = {212, 150, 232, 143, 33, 64, 85, 146, 237, 24, 98, 169, 140, 104, 53, 230};
-
-  uint8_t m[16] = {122, 9, 176, 178, 88, 101, 117, 187, 169, 52, 99, 119, 134, 137, 208, 108};
-
-  uint8_t c[16] = {104, 215, 68, 131, 87, 64, 56, 49, 117, 170, 100, 76, 170, 143, 0, 231};
-
   uint8_t t[16];
+
+  for (int i = 0; i < strlen(argv[1]); i++) {
+    m[i] = argv[1][i];
+  }
 
   aes_enc(t, m, k);
 
-  if (!memcmp(t, c, 16 * sizeof(uint8_t))) {
-    printf("AES.Enc( k, m ) == c\n");
-  } else {
-    printf("AES.Enc( k, m ) != c\n");
-  }
+  print_values("message    ", m, 16);
+  print_values("key        ", k, 16);
+  print_values("ciphertext ", t, 16);
 
+}
+
+void print_values(char* name, uint8_t *m, int length) {
+  printf("%s: ", name);
+  for (int i = 0; i < 16; i++) {
+    printf("%02x ", m[i]);
+  }
+  printf("\n");
 }
 
 aes_gf28_t xtime(aes_gf28_t a) {

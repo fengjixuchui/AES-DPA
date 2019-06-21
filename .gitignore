@@ -19,3 +19,5 @@ labs/coursework/scope/mask-traces.dat
 labs/coursework/scope/.DS_Store
 .DS_Store
 .vscode
+aes
+aes_masking
