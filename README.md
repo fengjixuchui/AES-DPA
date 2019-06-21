@@ -13,8 +13,11 @@ The DPA attack exploits the sbox function of the first round of the AES encrypti
 Compile and run the AES implementation
 
 ```
-make aes
-./aes "hello"
+$ make aes
+$ ./aes "Hello, World?"
+message    : 48 65 6c 6c 6f 2c 20 57 6f 72 6c 64 3f 00 00 00
+key        : d4 96 e8 8f 21 40 55 92 ed 18 62 a9 8c 68 35 e6
+ciphertext : 6b 82 1f 23 72 8a 31 f3 76 03 7f 10 5b 9b 29 65
 ```
 
 ### AES with countermeasures
@@ -22,8 +25,11 @@ make aes
 Compile and run the AES implementation as before
 
 ```
-make aes-masking
-./aes-masking "hello"
+$ make aes-mask
+$ ./aes-mask "Hello, World?"
+message    : 48 65 6c 6c 6f 2c 20 57 6f 72 6c 64 3f 00 00 00
+key        : d4 96 e8 8f 21 40 55 92 ed 18 62 a9 8c 68 35 e6
+ciphertext : 6b 82 1f 23 72 8a 31 f3 76 03 7f 10 5b 9b 29 65
 ```
 
 ### DPA
@@ -31,7 +37,18 @@ make aes-masking
 Run the DPA implementation, providing it with a trace file to attack
 
 ```
-make dpa
+$ make dpa
+python dpa.py traces-one.dat
+Loading traces...
+...
 ```
 
-Two sample trace files are provided. `traces-one.dat` contains a trace set recorded from a software AES implementation with no countermeasures implemented. `traces-two.dat` contains a trace set recorded from the software AES implementation utilising masking.
+The Makefile provided runs the DPA against the `traces-one.dat` trace file. To run the DPA against another trace file, simply run it with Python directly
+
+```
+$ python dpa.py traces-two.dat
+Loading traces...
+...
+```
+
+Two sample trace files are provided. `traces-one.dat` contains a trace set recorded from the AES implementation with no countermeasures implemented (`aes.c`). `traces-two.dat` contains a trace set recorded from the software AES implementation that utilises masking (`aes-mask.c`).
