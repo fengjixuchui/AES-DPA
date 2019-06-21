@@ -4,7 +4,7 @@ aes:
 
 .PHONY: aes-mask
 aes-mask:
-	gcc -std=c99 -Wall -O3 aes-masking.c -o aes-masking
+	gcc -std=c99 -Wall -O3 aes-mask.c -o aes-mask
 
 .PHONY: dpa
 dpa:
@@ -12,4 +12,4 @@ dpa:
 
 .PHONY: clean
 clean:
-	rm aes aes-masking
+	rm aes aes-mask
