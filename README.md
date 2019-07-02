@@ -6,13 +6,15 @@ As part of the Applied Cryptography unit at the University of Bristol, I wrote a
 
 The DPA attack exploits the sbox function of the first round of the AES encryption. Using the hamming weight bus leakage model...
 
-#### Masking
+The AES implementations are provided in the `aes.h`, `aes.c`, and `aes-mask.c` files, whilst the DPA attack implementation is provided in the `dpa.py` file.
 
-The masking implementation successfully prevents a first order DPA. In order to analyse the security improvement supplied by the masking implementation, the correlation coefficient calculated for each key hypothesis for 0-500 traces can be plotted. When running the DPA against the vanilla AES implementation (the trace file `traces-one.dat` contains traces from the vanilla AES implementation), the correct key hypothesis diverges from the rest of the key hypotheses:
+#### Countermeasures
+
+Both 'masking' and 'shuffling' were used as countermeasures against the DPA attack. The implementation utilising these countermeasures successfully prevents a first order DPA attack. In order to analyse the security improvement supplied by the masking implementation, the correlation coefficient calculated for each key hypothesis for 0-500 traces can be plotted. When running the DPA attack against the vanilla AES implementation (the trace file `traces-one.dat` contains traces from the vanilla AES implementation), the correct key hypothesis diverges from the rest of the key hypotheses:
 
 ![Original Correlations](plots/original-correlations.png)
 
-whereas when running the DPA against the AES implementation utlising masking (the trace file `traces-two.dat` contains traces from the masking AES implementation), no key hypothesis ever diverges from the rest:
+In contrast, when running the DPA attack against the AES implementation utlising masking (the trace file `traces-two.dat` contains traces from the masking AES implementation), no key hypothesis ever diverges from the rest:
 
 ![Mask Correlations](plots/mask-correlations.png)
 
@@ -44,7 +46,7 @@ ciphertext : 6b 82 1f 23 72 8a 31 f3 76 03 7f 10 5b 9b 29 65
 
 ### DPA
 
-Run the DPA implementation, providing it with a trace file to attack
+Run the DPA attack implementation, providing it with a trace file to attack
 
 ```console
 $ make dpa
@@ -53,7 +55,7 @@ Loading traces...
 ...
 ```
 
-The Makefile provided runs the DPA against the `traces-one.dat` trace file. To run the DPA against another trace file, simply run it with Python directly
+The Makefile provided runs the DPA attack against the `traces-one.dat` trace file. To run the DPA against another trace file, simply run it with Python directly
 
 ```console
 $ python dpa.py traces-two.dat
