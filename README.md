@@ -6,13 +6,16 @@ As part of the Applied Cryptography unit at the University of Bristol, I wrote a
 
 The DPA attack exploits the sbox function of the first round of the AES encryption. Using the hamming weight bus leakage...
 
+![Mask Correlations](mask-correlations.png)
+![Original Correlations](original-correlations.png)
+
 ## Usage
 
 ### AES
 
 Compile and run the AES implementation
 
-```
+```console
 $ make aes
 $ ./aes "Hello, World?"
 message    : 48 65 6c 6c 6f 2c 20 57 6f 72 6c 64 3f 00 00 00
@@ -24,7 +27,7 @@ ciphertext : 6b 82 1f 23 72 8a 31 f3 76 03 7f 10 5b 9b 29 65
 
 Compile and run the AES implementation as before
 
-```
+```console
 $ make aes-mask
 $ ./aes-mask "Hello, World?"
 message    : 48 65 6c 6c 6f 2c 20 57 6f 72 6c 64 3f 00 00 00
@@ -36,7 +39,7 @@ ciphertext : 6b 82 1f 23 72 8a 31 f3 76 03 7f 10 5b 9b 29 65
 
 Run the DPA implementation, providing it with a trace file to attack
 
-```
+```console
 $ make dpa
 python dpa.py traces-one.dat
 Loading traces...
@@ -45,7 +48,7 @@ Loading traces...
 
 The Makefile provided runs the DPA against the `traces-one.dat` trace file. To run the DPA against another trace file, simply run it with Python directly
 
-```
+```console
 $ python dpa.py traces-two.dat
 Loading traces...
 ...
