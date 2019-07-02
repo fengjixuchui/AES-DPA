@@ -20,6 +20,12 @@ In contrast, when running the DPA attack against the AES implementation utlising
 
 ## Usage
 
+### Prerequisits
+
+The following packages are required in order to run the AES implementations and the DPA attack:
+- Crypto - `pip install pycrypto`
+- Numpy - `pip install numpy`
+
 ### AES
 
 Compile and run the AES implementation
