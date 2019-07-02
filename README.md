@@ -8,7 +8,7 @@ The DPA attack exploits the sbox function of the first round of the AES encrypti
 
 The AES implementations are provided in the `aes.h`, `aes.c`, and `aes-mask.c` files, whilst the DPA attack implementation is provided in the `dpa.py` file.
 
-#### Countermeasures
+### Countermeasures
 
 Both 'masking' and 'shuffling' were used as countermeasures against the DPA attack. The implementation utilising these countermeasures successfully prevents a first order DPA attack. In order to analyse the security improvement supplied by the masking implementation, the correlation coefficient calculated for each key hypothesis for 0-500 traces can be plotted. When running the DPA attack against the vanilla AES implementation (the trace file `traces-one.dat` contains traces from the vanilla AES implementation), the correct key hypothesis diverges from the rest of the key hypotheses:
 
