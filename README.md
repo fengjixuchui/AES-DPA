@@ -10,11 +10,11 @@ The DPA attack exploits the sbox function of the first round of the AES encrypti
 
 The masking implementation successfully prevents a first order DPA. In order to analyse the security improvement supplied by the masking implementation, the correlation coefficient calculated for each key hypothesis for 0-500 traces can be plotted. When running the DPA against the vanilla AES implementation (the trace file `traces-one.dat` contains traces from the vanilla AES implementation), the correct key hypothesis diverges from the rest of the key hypotheses:
 
-![Original Correlations](original-correlations.png)
+![Original Correlations](plots/original-correlations.png)
 
 whereas when running the DPA against the AES implementation utlising masking (the trace file `traces-two.dat` contains traces from the masking AES implementation), no key hypothesis ever diverges from the rest:
 
-![Mask Correlations](mask-correlations.png)
+![Mask Correlations](plots/mask-correlations.png)
 
 ## Usage
 
